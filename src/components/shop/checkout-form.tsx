@@ -1,0 +1,148 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCart, cartTotal } from "@/stores/cart";
+import { formatMoney } from "@/lib/format";
+import { getInitData, withDevUserId } from "./telegram-init";
+import { toast } from "sonner";
+
+const DELIVERY_LABELS: Record<string, string> = {
+  nova_poshta_branch: "Нова Пошта — відділення",
+  nova_poshta_courier: "Нова Пошта — кур'єр",
+  pickup: "Самовивіз",
+};
+
+const checkoutSchema = z.object({
+  deliveryMethod: z.enum(["nova_poshta_branch", "nova_poshta_courier", "pickup"]),
+  city: z.string().min(1, "Вкажіть місто"),
+  branch: z.string().optional(),
+  street: z.string().optional(),
+  contactPhone: z.string().regex(/^\+?380\d{9}$/, "Формат: +380XXXXXXXXX"),
+  note: z.string().max(500).optional(),
+});
+
+type CheckoutValues = z.infer<typeof checkoutSchema>;
+
+export function CheckoutForm() {
+  const router = useRouter();
+  const items = useCart((s) => s.items);
+  const clear = useCart((s) => s.clear);
+  const total = cartTotal(items);
+  const [submitting, setSubmitting] = useState(false);
+
+  const form = useForm<CheckoutValues>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: { deliveryMethod: "nova_poshta_branch" },
+  });
+
+  const deliveryMethod = form.watch("deliveryMethod");
+
+  async function onSubmit(values: CheckoutValues) {
+    setSubmitting(true);
+    try {
+      const res = await fetch(withDevUserId("/api/orders"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": getInitData() },
+        body: JSON.stringify({
+          items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, qty: i.qty })),
+          deliveryMethod: values.deliveryMethod,
+          deliveryAddress: { city: values.city, branch: values.branch, street: values.street },
+          contactPhone: values.contactPhone,
+          note: values.note,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(body.error ?? "Не вдалося оформити замовлення");
+        return;
+      }
+
+      const { orderId } = await res.json();
+      clear();
+      router.push(`/orders/${orderId}`);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label>Спосіб доставки</Label>
+        <Select
+          defaultValue="nova_poshta_branch"
+          onValueChange={(v) => v && form.setValue("deliveryMethod", v as CheckoutValues["deliveryMethod"])}
+        >
+          <SelectTrigger>
+            <SelectValue>{(value: string) => DELIVERY_LABELS[value]}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="nova_poshta_branch">Нова Пошта — відділення</SelectItem>
+            <SelectItem value="nova_poshta_courier">Нова Пошта — кур'єр</SelectItem>
+            <SelectItem value="pickup">Самовивіз</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="city">Місто</Label>
+        <Input id="city" {...form.register("city")} placeholder="Київ" />
+        {form.formState.errors.city && (
+          <p className="text-xs text-destructive">{form.formState.errors.city.message}</p>
+        )}
+      </div>
+
+      {deliveryMethod === "nova_poshta_branch" && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="branch">№ відділення</Label>
+          <Input id="branch" {...form.register("branch")} placeholder="Відділення №5" />
+        </div>
+      )}
+
+      {deliveryMethod === "nova_poshta_courier" && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="street">Адреса</Label>
+          <Input id="street" {...form.register("street")} placeholder="вул. Хрещатик, 1" />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="contactPhone">Телефон</Label>
+        <Input id="contactPhone" {...form.register("contactPhone")} placeholder="+380XXXXXXXXX" />
+        {form.formState.errors.contactPhone && (
+          <p className="text-xs text-destructive">{form.formState.errors.contactPhone.message}</p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="note">Коментар (опційно)</Label>
+        <Textarea id="note" {...form.register("note")} placeholder="Побажання до замовлення" />
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border p-3">
+        <span className="text-muted-foreground">Разом</span>
+        <span className="text-lg font-semibold">{formatMoney(total)}</span>
+      </div>
+
+      <Button type="submit" size="lg" disabled={submitting || !items.length}>
+        {submitting ? "Оформлюємо..." : "Підтвердити замовлення"}
+      </Button>
+    </form>
+  );
+}
