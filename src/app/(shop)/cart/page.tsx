@@ -3,11 +3,18 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart, cartTotal } from "@/stores/cart";
 import { formatMoney } from "@/lib/format";
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between text-xs">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
 
 export default function CartPage() {
   const items = useCart((s) => s.items);
@@ -25,17 +32,39 @@ export default function CartPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {items.map((item) => (
-        <Card key={`${item.productId}-${item.variantId ?? ""}`} className="flex-row items-center gap-3 p-3 rounded-2xl">
-          <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+    <div className="flex flex-col">
+      {items.map((item, i) => (
+        <div
+          key={`${item.productId}-${item.variantId ?? ""}`}
+          className={
+            i < items.length - 1
+              ? "flex gap-4 border-b border-dashed border-border py-4"
+              : "flex gap-4 py-4"
+          }
+        >
+          <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-muted">
             {item.image && <Image src={item.image} alt={item.name} fill className="object-cover" />}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-medium">{item.name}</p>
-            {item.variantLabel && <p className="text-xs text-muted-foreground">{item.variantLabel}</p>}
-            <p className="text-sm text-muted-foreground">{formatMoney(item.price)}</p>
-            <div className="mt-1 flex items-center gap-2">
+
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
+              <p className="line-clamp-2 text-sm font-semibold uppercase tracking-tight">{item.name}</p>
+              <button
+                onClick={() => remove(item.productId, item.variantId)}
+                className="shrink-0 text-muted-foreground hover:text-destructive"
+                aria-label="Видалити"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              {item.variantLabel && <DetailRow label="Варіант" value={item.variantLabel} />}
+              <DetailRow label="Ціна" value={formatMoney(item.price)} />
+              <DetailRow label="Разом" value={formatMoney(item.price * item.qty)} />
+            </div>
+
+            <div className="flex items-center gap-2">
               <Button
                 size="icon"
                 variant="outline"
@@ -44,11 +73,7 @@ export default function CartPage() {
               >
                 <Minus className="size-3" />
               </Button>
-              <Input
-                readOnly
-                value={item.qty}
-                className="h-7 w-10 text-center px-0"
-              />
+              <span className="w-5 text-center text-sm">{item.qty}</span>
               <Button
                 size="icon"
                 variant="outline"
@@ -57,17 +82,9 @@ export default function CartPage() {
               >
                 <Plus className="size-3" />
               </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="ml-auto size-7 text-destructive"
-                onClick={() => remove(item.productId, item.variantId)}
-              >
-                <Trash2 className="size-4" />
-              </Button>
             </div>
           </div>
-        </Card>
+        </div>
       ))}
 
       <div className="sticky bottom-16 mt-2 flex items-center justify-between rounded-lg border bg-background p-3">
@@ -75,7 +92,7 @@ export default function CartPage() {
         <span className="text-lg font-semibold">{formatMoney(total)}</span>
       </div>
 
-      <Button render={<Link href="/checkout">Оформити замовлення</Link>} size="lg" />
+      <Button render={<Link href="/checkout">Оформити замовлення</Link>} size="lg" className="mt-4" />
     </div>
   );
 }
