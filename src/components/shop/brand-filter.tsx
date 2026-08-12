@@ -29,12 +29,14 @@ export function BrandFilter({ brands }: { brands: Brand[] }) {
       <div className="flex gap-3 pb-2">
         <Link
           href={buildHref(pathname, params, { brand: null })}
-          className={cn(
-            "flex shrink-0 flex-col items-center gap-1 rounded-xl border px-3 py-2 text-xs",
-            !active ? "border-primary bg-primary/5" : "border-transparent text-muted-foreground"
-          )}
+          className="flex shrink-0 flex-col items-center gap-1 px-1 py-2 text-xs"
         >
-          <span className="flex size-8 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
+          <span
+            className={cn(
+              "flex size-11 items-center justify-center rounded-full text-[10px] font-medium",
+              !active ? "bg-transparent ring-2 ring-foreground text-foreground" : "bg-muted text-muted-foreground"
+            )}
+          >
             Усі
           </span>
         </Link>
@@ -42,18 +44,24 @@ export function BrandFilter({ brands }: { brands: Brand[] }) {
           <Link
             key={b.id}
             href={buildHref(pathname, params, { brand: active === b.slug ? null : b.slug })}
-            className={cn(
-              "flex shrink-0 flex-col items-center gap-1 rounded-xl border px-3 py-2 text-xs",
-              active === b.slug ? "border-primary bg-primary/5" : "border-transparent text-muted-foreground"
-            )}
+            className="flex shrink-0 flex-col items-center gap-1 px-1 py-2 text-xs"
           >
-            <span className="relative size-8 overflow-hidden rounded-full bg-muted">
-              {b.logo_url && (
+            <span
+              className={cn(
+                "relative flex size-11 items-center justify-center overflow-hidden rounded-full",
+                active === b.slug ? "bg-transparent ring-2 ring-foreground" : "bg-muted"
+              )}
+            >
+              {b.logo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- admin-entered, arbitrary external domain
                 <img src={b.logo_url} alt={b.name} className="size-full object-cover" />
+              ) : (
+                <span className={cn("text-[10px] font-medium", active === b.slug ? "text-foreground" : "text-muted-foreground")}>
+                  {b.name.slice(0, 2).toUpperCase()}
+                </span>
               )}
             </span>
-            {b.name}
+            <span className={active === b.slug ? "text-foreground" : "text-muted-foreground"}>{b.name}</span>
           </Link>
         ))}
       </div>
