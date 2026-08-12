@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { LogoUploadField, type LogoImage } from "@/components/admin/logo-upload-field";
 import { toast } from "sonner";
 
 type Brand = { id: string; name: string; slug: string; logo_url: string | null; sort_order: number; is_active: boolean };
@@ -14,7 +15,7 @@ export default function AdminBrandsPage() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
+  const [logo, setLogo] = useState<LogoImage | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const { data } = useQuery({
@@ -30,10 +31,25 @@ export default function AdminBrandsPage() {
     if (!name.trim() || !slug.trim()) return;
     setSubmitting(true);
     try {
+      // Same rule as product photos: nothing hits Supabase Storage until
+      // the brand is actually saved.
+      let logoUrl: string | null = null;
+      if (logo?.file) {
+        const form = new FormData();
+        form.append("files", logo.file);
+        const uploadRes = await fetch("/api/admin/upload", { method: "POST", body: form });
+        if (!uploadRes.ok) {
+          const body = await uploadRes.json().catch(() => ({}));
+          toast.error(body.error ?? "Не вдалося завантажити лого");
+          return;
+        }
+        logoUrl = (await uploadRes.json()).urls[0];
+      }
+
       const res = await fetch("/api/admin/brands", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, logo_url: logoUrl || null, sort_order: (data?.length ?? 0) + 1 }),
+        body: JSON.stringify({ name, slug, logo_url: logoUrl, sort_order: (data?.length ?? 0) + 1 }),
       });
       if (!res.ok) {
         toast.error("Не вдалося створити бренд");
@@ -41,7 +57,7 @@ export default function AdminBrandsPage() {
       }
       setName("");
       setSlug("");
-      setLogoUrl("");
+      setLogo(null);
       queryClient.invalidateQueries({ queryKey: ["admin-brands"] });
     } finally {
       setSubmitting(false);
@@ -64,10 +80,10 @@ export default function AdminBrandsPage() {
         Бренди (Nike, Adidas тощо) з'являються як фільтр у каталозі Mini App.
       </p>
 
-      <div className="flex max-w-2xl gap-2">
+      <div className="flex max-w-2xl items-center gap-2">
+        <LogoUploadField value={logo} onChange={setLogo} />
         <Input placeholder="Назва" value={name} onChange={(e) => setName(e.target.value)} />
         <Input placeholder="slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-        <Input placeholder="URL логотипу" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} />
         <Button onClick={addBrand} disabled={submitting}>
           Додати
         </Button>
