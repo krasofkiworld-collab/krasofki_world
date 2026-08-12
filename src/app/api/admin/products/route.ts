@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { z } from "zod";
@@ -26,6 +27,8 @@ const productSchema = z.object({
   variants: z.array(variantSchema).default([]),
 });
 
+const ADMIN_PAGE_SIZE = 20;
+
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -34,10 +37,14 @@ export async function GET(req: NextRequest) {
   const brand = req.nextUrl.searchParams.get("brand");
   const q = req.nextUrl.searchParams.get("q");
   const lowStock = req.nextUrl.searchParams.get("filter") === "low_stock";
+  const page = Math.max(0, Number(req.nextUrl.searchParams.get("page") ?? "0") || 0);
 
   let query = supabaseServer
     .from("products")
-    .select("id, slug, name, price, stock_quantity, is_active, images, category_id, brand_id, categories(name), brands(name)")
+    .select(
+      "id, slug, name, price, stock_quantity, is_active, images, category_id, brand_id, categories(name), brands(name)",
+      { count: "exact" }
+    )
     .order("created_at", { ascending: false });
 
   if (category) query = query.eq("category_id", category);
@@ -45,9 +52,12 @@ export async function GET(req: NextRequest) {
   if (q) query = query.ilike("name", `%${q}%`);
   if (lowStock) query = query.lte("stock_quantity", 5);
 
-  const { data, error } = await query;
+  const offset = page * ADMIN_PAGE_SIZE;
+  const { data, count, error } = await query.range(offset, offset + ADMIN_PAGE_SIZE - 1);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ products: data });
+
+  const total = count ?? 0;
+  return NextResponse.json({ products: data, hasMore: offset + ADMIN_PAGE_SIZE < total, total });
 }
 
 export async function POST(req: NextRequest) {
@@ -72,5 +82,6 @@ export async function POST(req: NextRequest) {
       .insert(variants.map((v) => ({ ...v, product_id: product.id })));
   }
 
+  revalidateTag("catalog:products", { expire: 0 });
   return NextResponse.json({ id: product.id });
 }
