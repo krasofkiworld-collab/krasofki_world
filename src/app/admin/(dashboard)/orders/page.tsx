@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -37,6 +37,14 @@ type Order = {
 };
 
 export default function AdminOrdersPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-col gap-4"><h1 className="text-2xl font-semibold">Замовлення</h1></div>}>
+      <AdminOrdersContent />
+    </Suspense>
+  );
+}
+
+function AdminOrdersContent() {
   const router = useRouter();
   const params = useSearchParams();
   const status = params.get("status") ?? "";
