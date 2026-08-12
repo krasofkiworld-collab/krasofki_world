@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import { Plus } from "lucide-react";
+import { useInfiniteScrollTrigger } from "@/lib/use-infinite-scroll-trigger";
 
 type Product = {
   id: string;
@@ -19,13 +21,22 @@ type Product = {
 };
 
 export default function AdminProductsPage() {
-  const { data, isLoading } = useQuery({
+  const sentinelRef = useRef<HTMLTableRowElement>(null);
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ["admin-products"],
-    queryFn: async () => {
-      const res = await fetch("/api/admin/products");
-      return (await res.json()) as { products: Product[] };
+    queryFn: async ({ pageParam }) => {
+      const res = await fetch(`/api/admin/products?page=${pageParam}`);
+      return (await res.json()) as { products: Product[]; hasMore: boolean };
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _pages, lastPageParam) =>
+      lastPage.hasMore ? lastPageParam + 1 : undefined,
   });
+
+  useInfiniteScrollTrigger(sentinelRef, hasNextPage, isFetchingNextPage, fetchNextPage);
+
+  const products = data?.pages.flatMap((p) => p.products) ?? [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -52,7 +63,7 @@ export default function AdminProductsPage() {
               <TableCell colSpan={5}>Завантаження...</TableCell>
             </TableRow>
           )}
-          {data?.products.map((p) => (
+          {products.map((p) => (
             <TableRow key={p.id} className="cursor-pointer">
               <TableCell>
                 <Link href={`/admin/products/${p.id}`} className="hover:underline">
@@ -71,10 +82,17 @@ export default function AdminProductsPage() {
               </TableCell>
             </TableRow>
           ))}
-          {!isLoading && !data?.products.length && (
+          {!isLoading && !products.length && (
             <TableRow>
               <TableCell colSpan={5} className="text-center text-muted-foreground">
                 Товарів ще немає.
+              </TableCell>
+            </TableRow>
+          )}
+          {hasNextPage && (
+            <TableRow ref={sentinelRef}>
+              <TableCell colSpan={5} className="text-center text-xs text-muted-foreground">
+                {isFetchingNextPage ? "Завантаження ще…" : ""}
               </TableCell>
             </TableRow>
           )}

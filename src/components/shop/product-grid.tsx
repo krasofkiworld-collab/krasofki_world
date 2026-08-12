@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ProductCard } from "./product-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInfiniteScrollTrigger } from "@/lib/use-infinite-scroll-trigger";
 
 type Product = {
   id: string;
@@ -47,18 +48,7 @@ export function ProductGrid({ initialProducts, hasMore: initialHasMore, filters 
     initialData: { pages: [{ products: initialProducts, hasMore: initialHasMore }], pageParams: [0] },
   });
 
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || !hasNextPage) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !isFetchingNextPage) fetchNextPage();
-      },
-      { rootMargin: "600px" } // start loading before the user hits the literal bottom
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  useInfiniteScrollTrigger(sentinelRef, hasNextPage, isFetchingNextPage, fetchNextPage);
 
   const products = data?.pages.flatMap((p) => p.products) ?? initialProducts;
 
@@ -74,7 +64,9 @@ export function ProductGrid({ initialProducts, hasMore: initialHasMore, filters 
         ))}
       </div>
       {hasNextPage && (
-        <div ref={sentinelRef} className="grid grid-cols-2 gap-3">
+        // min-h: a 0-height sentinel is an unreliable IntersectionObserver
+        // target in some environments (see use-infinite-scroll-trigger.ts).
+        <div ref={sentinelRef} className="grid min-h-24 grid-cols-2 gap-3">
           {isFetchingNextPage &&
             [...Array(2)].map((_, i) => <Skeleton key={i} className="aspect-[3/4] w-full rounded-2xl" />)}
         </div>
