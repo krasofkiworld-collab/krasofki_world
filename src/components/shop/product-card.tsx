@@ -25,10 +25,18 @@ type Product = {
 };
 
 export function ProductCard({ product }: { product: Product }) {
+  const items = useCart((s) => s.items);
   const add = useCart((s) => s.add);
   const isFavorite = useFavorites((s) => s.isFavorite(product.id));
   const toggleFavorite = useFavorites((s) => s.toggle);
   const outOfStock = product.stock_quantity <= 0;
+  // Quick-add only applies to variant-less products (variantId undefined).
+  // Clamp against what's already in the cart, not just raw stock — otherwise
+  // repeated clicks add past the real limit. Distinct from `outOfStock`
+  // above: this can be true even when the product itself still has stock.
+  const alreadyInCart =
+    items.find((i) => i.productId === product.id && i.variantId === undefined)?.qty ?? 0;
+  const maxedInCart = alreadyInCart >= product.stock_quantity;
   const discountPct = product.compare_at_price
     ? Math.round((1 - product.price / product.compare_at_price) * 100)
     : 0;
@@ -87,7 +95,7 @@ export function ProductCard({ product }: { product: Product }) {
           size="icon"
           variant="secondary"
           className="rounded-full"
-          disabled={outOfStock}
+          disabled={outOfStock || maxedInCart}
           onClick={() => {
             add({ productId: product.id, name: product.name, price: product.price, image: product.images[0], qty: 1 });
             hapticLight();

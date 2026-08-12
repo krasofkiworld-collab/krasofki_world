@@ -26,6 +26,7 @@ type Product = {
 };
 
 export function ProductPurchasePanel({ product, variants }: { product: Product; variants: Variant[] }) {
+  const items = useCart((s) => s.items);
   const add = useCart((s) => s.add);
   const hasVariants = variants.length > 0;
 
@@ -49,15 +50,26 @@ export function ProductPurchasePanel({ product, variants }: { product: Product; 
   const maxQty = hasVariants ? (selectedVariant?.stock_quantity ?? 0) : product.stock_quantity;
   const outOfStock = maxQty <= 0;
 
+  // How many of this exact product+variant are already sitting in the
+  // cart — the stepper must clamp against *this*, not raw stock, or
+  // clicking "Add" repeatedly lets you add past the real limit (each add
+  // resets the local qty to 1, so a naive maxQty-only clamp never notices
+  // the running total already in the cart).
+  const alreadyInCart =
+    items.find((i) => i.productId === product.id && i.variantId === selectedVariant?.id)?.qty ?? 0;
+  const availableToAdd = Math.max(0, maxQty - alreadyInCart);
+  const maxedInCart = !outOfStock && availableToAdd <= 0;
+
   // Clamp qty to what's actually available every time the selected
-  // size/color changes — otherwise a qty picked for one variant (e.g. 5)
-  // silently carries over to a variant with less stock (or none at all).
+  // size/color changes, or the cart itself changes — otherwise a qty
+  // picked for one variant (e.g. 5) silently carries over to a variant
+  // with less stock (or none at all), or past what's already in the cart.
   useEffect(() => {
-    setQty((q) => (maxQty <= 0 ? 0 : Math.min(Math.max(q, 1), maxQty)));
-  }, [maxQty]);
+    setQty((q) => (availableToAdd <= 0 ? 0 : Math.min(Math.max(q, 1), availableToAdd)));
+  }, [availableToAdd]);
 
   function handleAdd() {
-    if (outOfStock || qty < 1) return; // defensive — the button is disabled for this too
+    if (availableToAdd <= 0 || qty < 1) return; // defensive — the button is disabled for this too
     add({
       productId: product.id,
       variantId: selectedVariant?.id,
@@ -112,8 +124,13 @@ export function ProductPurchasePanel({ product, variants }: { product: Product; 
                 aria-label={c.name}
                 title={c.name}
                 className={cn(
-                  "size-8 rounded-full border-2",
-                  selectedColor === c.name ? "border-primary" : "border-transparent ring-1 ring-border"
+                  "size-8 rounded-full",
+                  // Selected: ring sits offset from the fill by a visible gap
+                  // (ring-offset), so it reads as "this one" instead of just
+                  // a thicker edge that blends into the color itself.
+                  selectedColor === c.name
+                    ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+                    : "ring-1 ring-border"
                 )}
                 style={{ backgroundColor: c.hex ?? "#ccc" }}
               />
@@ -128,7 +145,7 @@ export function ProductPurchasePanel({ product, variants }: { product: Product; 
             size="icon"
             variant="outline"
             className="size-8"
-            disabled={outOfStock || qty <= 1}
+            disabled={availableToAdd <= 0 || qty <= 1}
             onClick={() => setQty((q) => Math.max(1, q - 1))}
           >
             <Minus className="size-3.5" />
@@ -138,14 +155,18 @@ export function ProductPurchasePanel({ product, variants }: { product: Product; 
             size="icon"
             variant="outline"
             className="size-8"
-            disabled={qty >= maxQty}
-            onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+            disabled={qty >= availableToAdd}
+            onClick={() => setQty((q) => Math.min(availableToAdd, q + 1))}
           >
             <Plus className="size-3.5" />
           </Button>
         </div>
-        <Button size="lg" className="flex-1" disabled={outOfStock} onClick={handleAdd}>
-          {outOfStock ? "Немає в наявності" : `Додати · ${formatMoney(product.price * qty)}`}
+        <Button size="lg" className="flex-1" disabled={availableToAdd <= 0} onClick={handleAdd}>
+          {outOfStock
+            ? "Немає в наявності"
+            : maxedInCart
+              ? "Максимум уже в кошику"
+              : `Додати · ${formatMoney(product.price * qty)}`}
         </Button>
       </div>
     </div>
