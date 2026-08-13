@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Package, FolderTree, ShoppingBag, Settings, BadgeCheck, Hash } from "lucide-react";
+import { LayoutDashboard, Package, FolderTree, ShoppingBag, Settings, BadgeCheck, Hash, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PendingOrdersBadge } from "./pending-orders-badge";
 
@@ -19,7 +19,11 @@ const CATALOG_LINKS = [
   { href: "/admin/tags", label: "Теги", icon: Hash },
 ];
 
-const OTHER_LINKS = [{ href: "/admin/settings", label: "Налаштування", icon: Settings }];
+// Owner-only — also enforced server-side by middleware.ts.
+const OWNER_LINKS = [
+  { href: "/admin/team", label: "Команда", icon: Users },
+  { href: "/admin/settings", label: "Налаштування", icon: Settings },
+];
 
 function NavSection({
   title,
@@ -58,7 +62,7 @@ function NavSection({
   );
 }
 
-export function AdminNav() {
+export function AdminNav({ role }: { role: "owner" | "manager" }) {
   const pathname = usePathname();
 
   return (
@@ -73,7 +77,7 @@ export function AdminNav() {
       <nav className="flex flex-1 flex-col gap-6">
         <NavSection title="Загальне" links={MAIN_LINKS} pathname={pathname} />
         <NavSection title="Каталог" links={CATALOG_LINKS} pathname={pathname} />
-        <NavSection title="Інше" links={OTHER_LINKS} pathname={pathname} />
+        {role === "owner" && <NavSection title="Власнику" links={OWNER_LINKS} pathname={pathname} />}
       </nav>
     </aside>
   );

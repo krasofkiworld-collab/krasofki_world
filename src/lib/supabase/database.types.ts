@@ -39,6 +39,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          accepted_at: string | null
+          clerk_user_id: string | null
+          email: string
+          id: string
+          invited_at: string
+          role: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          clerk_user_id?: string | null
+          email: string
+          id?: string
+          invited_at?: string
+          role?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          clerk_user_id?: string | null
+          email?: string
+          id?: string
+          invited_at?: string
+          role?: string
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           created_at: string
