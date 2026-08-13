@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { SITE_URL } from "@/lib/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Krosofki World",
-  description: "Telegram Mini App магазин Krosofki World",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "Krosofki World — взуття з доставкою по Україні", template: "%s — Krosofki World" },
+  description: "Кросівки, шльопанці та аксесуари з доставкою Новою поштою по всій Україні. Замовляйте через Telegram або на сайті.",
+  openGraph: {
+    type: "website",
+    locale: "uk_UA",
+    siteName: "Krosofki World",
+    title: "Krosofki World — взуття з доставкою по Україні",
+    description: "Кросівки, шльопанці та аксесуари з доставкою Новою поштою по всій Україні.",
+  },
+  twitter: { card: "summary_large_image" },
+  // Set once you verify the site in Google Search Console — paste the
+  // content value of the meta tag GSC gives you into this env var.
+  verification: process.env.NEXT_PUBLIC_GSC_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GSC_VERIFICATION }
+    : undefined,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

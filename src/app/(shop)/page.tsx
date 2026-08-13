@@ -1,13 +1,19 @@
+import type { Metadata } from "next";
 import { ProductGrid } from "@/components/shop/product-grid";
 import { CategoryFilter } from "@/components/shop/category-filter";
 import { BrandFilter } from "@/components/shop/brand-filter";
 import { TagFilter } from "@/components/shop/tag-filter";
 import { SearchAndSort } from "@/components/shop/search-and-sort";
 import { HeroBanner } from "@/components/shop/hero-banner";
+import { ShopFooterLinks } from "@/components/shop/shop-footer-links";
 import { PAGE_SIZE } from "@/lib/products-query";
 import { getCachedCategories, getCachedBrands, getCachedTags, getCachedProducts } from "@/lib/catalog-cache";
 
 type SearchParams = Promise<{ category?: string; brand?: string; tag?: string; q?: string; sort?: string }>;
+
+// Filter query params (?category=, ?brand=...) shouldn't fork into separate
+// indexed pages — they all canonicalize back to the catalog root.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 type Product = {
   id: string;
@@ -43,6 +49,8 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
         hasMore={PAGE_SIZE < total}
         filters={filters}
       />
+
+      <ShopFooterLinks />
     </div>
   );
 }

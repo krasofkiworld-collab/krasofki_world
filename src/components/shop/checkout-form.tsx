@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -117,6 +118,11 @@ export function CheckoutForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
+        <Label>Оплата</Label>
+        <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">Накладений платіж — оплата при отриманні</p>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="city">Місто</Label>
         <Input id="city" {...form.register("city")} placeholder="Київ" />
         {form.formState.errors.city && (
@@ -153,6 +159,13 @@ export function CheckoutForm() {
       <Button type="submit" size="lg" disabled={submitting || !items.length}>
         {submitting ? "Оформлюємо..." : "Підтвердити замовлення"}
       </Button>
+      <p className="text-center text-xs text-muted-foreground">
+        Повернення та обмін протягом 14 днів. Деталі — в{" "}
+        <Link href="/terms" className="underline">
+          умовах використання
+        </Link>
+        .
+      </p>
     </form>
   );
 }
