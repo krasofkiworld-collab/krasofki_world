@@ -112,34 +112,43 @@ export type Database = {
       }
       customers: {
         Row: {
+          contact_telegram: string | null
           created_at: string
           first_name: string | null
           id: string
           last_name: string | null
           phone: string | null
-          telegram_user_id: number
+          source: string
+          telegram_user_id: number | null
           updated_at: string
           username: string | null
+          web_client_id: string | null
         }
         Insert: {
+          contact_telegram?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
           phone?: string | null
-          telegram_user_id: number
+          source?: string
+          telegram_user_id?: number | null
           updated_at?: string
           username?: string | null
+          web_client_id?: string | null
         }
         Update: {
+          contact_telegram?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
           phone?: string | null
-          telegram_user_id?: number
+          source?: string
+          telegram_user_id?: number | null
           updated_at?: string
           username?: string | null
+          web_client_id?: string | null
         }
         Relationships: []
       }
@@ -259,6 +268,7 @@ export type Database = {
           id: string
           order_number: string
           payment_status: Database["public"]["Enums"]["payment_status"]
+          source: string
           status: Database["public"]["Enums"]["order_status"]
           subtotal_amount: number
           total_amount: number
@@ -277,6 +287,7 @@ export type Database = {
           id?: string
           order_number: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_amount: number
           total_amount: number
@@ -295,6 +306,7 @@ export type Database = {
           id?: string
           order_number?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          source?: string
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_amount?: number
           total_amount?: number
@@ -592,6 +604,7 @@ export type Database = {
           currency: string
           free_delivery_threshold: number | null
           id: boolean
+          nova_poshta_api_key: string | null
           store_name: string
           updated_at: string
         }
@@ -599,6 +612,7 @@ export type Database = {
           currency?: string
           free_delivery_threshold?: number | null
           id?: boolean
+          nova_poshta_api_key?: string | null
           store_name?: string
           updated_at?: string
         }
@@ -606,6 +620,7 @@ export type Database = {
           currency?: string
           free_delivery_threshold?: number | null
           id?: boolean
+          nova_poshta_api_key?: string | null
           store_name?: string
           updated_at?: string
         }

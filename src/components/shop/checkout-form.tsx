@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import { useCart, cartTotal } from "@/stores/cart";
 import { formatMoney } from "@/lib/format";
-import { getInitData, withDevUserId } from "./telegram-init";
+import { getInitData, withDevUserId, isInTelegram } from "./telegram-init";
+import { getWebClientId } from "./web-client-id";
 import { toast } from "sonner";
 
 const DELIVERY_LABELS: Record<string, string> = {
@@ -34,6 +35,9 @@ const checkoutSchema = z.object({
   street: z.string().optional(),
   contactPhone: z.string().regex(/^\+?380\d{9}$/, "Формат: +380XXXXXXXXX"),
   note: z.string().max(500).optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  contactTelegram: z.string().optional(),
 });
 
 type CheckoutValues = z.infer<typeof checkoutSchema>;
@@ -44,9 +48,18 @@ export function CheckoutForm() {
   const clear = useCart((s) => s.clear);
   const total = cartTotal(items);
   const [submitting, setSubmitting] = useState(false);
+  // Evaluated once on mount (client-only) — this never changes mid-session.
+  const [inTelegram] = useState(isInTelegram);
 
   const form = useForm<CheckoutValues>({
-    resolver: zodResolver(checkoutSchema),
+    resolver: zodResolver(
+      inTelegram
+        ? checkoutSchema
+        : checkoutSchema.extend({
+            firstName: z.string().min(1, "Вкажіть ім'я"),
+            lastName: z.string().min(1, "Вкажіть прізвище"),
+          })
+    ),
     defaultValues: { deliveryMethod: "nova_poshta_branch" },
   });
 
@@ -57,13 +70,20 @@ export function CheckoutForm() {
     try {
       const res = await fetch(withDevUserId("/api/orders"), {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": getInitData() },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Telegram-Init-Data": getInitData(),
+          ...(inTelegram ? {} : { "X-Web-Client-Id": getWebClientId() }),
+        },
         body: JSON.stringify({
           items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, qty: i.qty })),
           deliveryMethod: values.deliveryMethod,
           deliveryAddress: { city: values.city, branch: values.branch, street: values.street },
           contactPhone: values.contactPhone,
           note: values.note,
+          ...(inTelegram
+            ? {}
+            : { firstName: values.firstName, lastName: values.lastName, contactTelegram: values.contactTelegram || undefined }),
         }),
       });
 
@@ -83,6 +103,30 @@ export function CheckoutForm() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      {!inTelegram && (
+        <div className="flex flex-col gap-3 rounded-lg border p-3">
+          <p className="text-xs text-muted-foreground">Ваші контактні дані для замовлення</p>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="firstName">Ім&apos;я</Label>
+            <Input id="firstName" {...form.register("firstName")} placeholder="Андрій" />
+            {form.formState.errors.firstName && (
+              <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="lastName">Прізвище</Label>
+            <Input id="lastName" {...form.register("lastName")} placeholder="Шевченко" />
+            {form.formState.errors.lastName && (
+              <p className="text-xs text-destructive">{form.formState.errors.lastName.message}</p>
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="contactTelegram">Telegram (за бажанням)</Label>
+            <Input id="contactTelegram" {...form.register("contactTelegram")} placeholder="@username" />
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <Label>Спосіб доставки</Label>
         <Select

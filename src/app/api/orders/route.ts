@@ -1,28 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { createOrderSchema } from "@/lib/validation/order";
-import { verifyInitData, DEV_INIT_DATA_FALLBACK_ENABLED } from "@/lib/telegram/verify-init-data";
+import { identifyCustomer } from "@/lib/telegram/identify-customer";
 import { notifyCustomer, notifyStaff, orderMessages } from "@/lib/telegram/notify";
 
 export async function GET(req: NextRequest) {
-  const initData = req.headers.get("x-telegram-init-data") ?? "";
-  const botToken = process.env.TELEGRAM_BOT_TOKEN!;
+  const identity = identifyCustomer(req);
+  if (!identity.ok) return NextResponse.json({ error: "unauthorized: " + identity.reason }, { status: 401 });
 
-  let telegramUserId: number;
-  const verified = verifyInitData(initData, botToken);
-  if (verified.ok) {
-    telegramUserId = verified.userId;
-  } else if (DEV_INIT_DATA_FALLBACK_ENABLED && req.nextUrl.searchParams.get("dev_user_id")) {
-    telegramUserId = Number(req.nextUrl.searchParams.get("dev_user_id"));
-  } else {
-    return NextResponse.json({ error: "unauthorized: " + verified.reason }, { status: 401 });
-  }
-
-  const { data: customer } = await supabaseServer
-    .from("customers")
-    .select("id")
-    .eq("telegram_user_id", telegramUserId)
-    .maybeSingle();
+  const lookupColumn = identity.source === "telegram" ? "telegram_user_id" : "web_client_id";
+  const lookupValue = identity.source === "telegram" ? identity.telegramUserId : identity.webClientId;
+  const { data: customer } = await supabaseServer.from("customers").select("id").eq(lookupColumn, lookupValue).maybeSingle();
 
   if (!customer) return NextResponse.json({ orders: [] });
 
@@ -36,23 +24,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const initData = req.headers.get("x-telegram-init-data") ?? "";
-  const botToken = process.env.TELEGRAM_BOT_TOKEN!;
-
-  let telegramUser: { userId: number; username?: string; firstName?: string; lastName?: string };
-
-  const verified = verifyInitData(initData, botToken);
-  if (verified.ok) {
-    telegramUser = verified;
-  } else if (DEV_INIT_DATA_FALLBACK_ENABLED) {
-    const devUserId = req.nextUrl.searchParams.get("dev_user_id");
-    if (!devUserId) {
-      return NextResponse.json({ error: "unauthorized: " + verified.reason }, { status: 401 });
-    }
-    telegramUser = { userId: Number(devUserId) };
-  } else {
-    return NextResponse.json({ error: "unauthorized: " + verified.reason }, { status: 401 });
-  }
+  const identity = identifyCustomer(req);
+  if (!identity.ok) return NextResponse.json({ error: "unauthorized: " + identity.reason }, { status: 401 });
 
   const body = await req.json().catch(() => null);
   const parsed = createOrderSchema.safeParse(body);
@@ -60,6 +33,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "invalid payload" }, { status: 400 });
   }
   const input = parsed.data;
+
+  if (identity.source === "web" && (!input.firstName || !input.lastName)) {
+    return NextResponse.json({ error: "Вкажіть ім'я та прізвище" }, { status: 400 });
+  }
 
   // Never trust client-sent prices/names — re-read from DB.
   const productIds = input.items.map((i) => i.productId);
@@ -111,19 +88,37 @@ export async function POST(req: NextRequest) {
 
   const subtotal = input.items.reduce((sum, item) => sum + unitPrice(item) * item.qty, 0);
 
-  const { data: customer, error: customerError } = await supabaseServer
-    .from("customers")
-    .upsert(
-      {
-        telegram_user_id: telegramUser.userId,
-        username: telegramUser.username ?? null,
-        first_name: telegramUser.firstName ?? null,
-        last_name: telegramUser.lastName ?? null,
-      },
-      { onConflict: "telegram_user_id" }
-    )
-    .select("id")
-    .single();
+  const { data: customer, error: customerError } =
+    identity.source === "telegram"
+      ? await supabaseServer
+          .from("customers")
+          .upsert(
+            {
+              telegram_user_id: identity.telegramUserId,
+              username: identity.username ?? null,
+              first_name: identity.firstName ?? null,
+              last_name: identity.lastName ?? null,
+              source: "telegram",
+            },
+            { onConflict: "telegram_user_id" }
+          )
+          .select("id")
+          .single()
+      : await supabaseServer
+          .from("customers")
+          .upsert(
+            {
+              web_client_id: identity.webClientId,
+              first_name: input.firstName,
+              last_name: input.lastName,
+              phone: input.contactPhone,
+              contact_telegram: input.contactTelegram || null,
+              source: "web",
+            },
+            { onConflict: "web_client_id" }
+          )
+          .select("id")
+          .single();
 
   if (customerError || !customer) {
     return NextResponse.json({ error: "failed to upsert customer" }, { status: 500 });
@@ -134,6 +129,7 @@ export async function POST(req: NextRequest) {
     .insert({
       order_number: "",
       customer_id: customer.id,
+      source: identity.source,
       delivery_method: input.deliveryMethod,
       delivery_address: input.deliveryAddress,
       contact_phone: input.contactPhone,
@@ -170,9 +166,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "failed to create order items" }, { status: 500 });
   }
 
+  // Web guests have no Telegram chat to message — only staff gets pinged for those.
   await Promise.allSettled([
-    notifyCustomer(order.id, telegramUser.userId, orderMessages.created(order.order_number, subtotal)),
-    notifyStaff(order.id, orderMessages.createdForStaff(order.order_number, subtotal, telegramUser.username)),
+    identity.source === "telegram"
+      ? notifyCustomer(order.id, identity.telegramUserId, orderMessages.created(order.order_number, subtotal))
+      : Promise.resolve(),
+    notifyStaff(
+      order.id,
+      orderMessages.createdForStaff(order.order_number, subtotal, identity.source === "telegram" ? identity.username : undefined)
+    ),
   ]);
 
   return NextResponse.json({ orderId: order.id, orderNumber: order.order_number });

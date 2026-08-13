@@ -19,6 +19,11 @@ export const createOrderSchema = z.object({
   }),
   contactPhone: z.string().regex(/^\+?380\d{9}$/, "Формат: +380XXXXXXXXX"),
   note: z.string().max(500).optional(),
+  // Only sent (and required) when the shop is opened outside Telegram —
+  // there's no Telegram profile to pull a name from in that case.
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
+  contactTelegram: z.string().max(64).optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

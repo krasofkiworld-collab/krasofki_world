@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { formatMoney } from "@/lib/format";
-import { getInitData, withDevUserId } from "@/components/shop/telegram-init";
+import { getInitData, withDevUserId, isInTelegram } from "@/components/shop/telegram-init";
+import { getWebClientId } from "@/components/shop/web-client-id";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -34,7 +35,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     queryKey: ["order", id],
     queryFn: async () => {
       const res = await fetch(withDevUserId(`/api/orders/${id}`), {
-        headers: { "X-Telegram-Init-Data": getInitData() },
+        headers: {
+          "X-Telegram-Init-Data": getInitData(),
+          ...(isInTelegram() ? {} : { "X-Web-Client-Id": getWebClientId() }),
+        },
       });
       if (!res.ok) throw new Error((await res.json()).error ?? "failed");
       return (await res.json()) as OrderDetail;

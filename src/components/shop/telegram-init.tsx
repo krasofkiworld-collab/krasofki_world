@@ -43,6 +43,11 @@ export function getInitData(): string {
   return window.Telegram?.WebApp.initData ?? "";
 }
 
+/** True when the app is actually running inside Telegram (has a real initData string). */
+export function isInTelegram(): boolean {
+  return !!getInitData();
+}
+
 export function hapticLight() {
   window.Telegram?.WebApp.HapticFeedback?.impactOccurred("light");
 }

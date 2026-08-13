@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/lib/format";
-import { getInitData, withDevUserId } from "@/components/shop/telegram-init";
+import { getInitData, withDevUserId, isInTelegram } from "@/components/shop/telegram-init";
+import { getWebClientId } from "@/components/shop/web-client-id";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Нове",
@@ -29,7 +30,12 @@ export default function OrdersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
-      const res = await fetch(withDevUserId("/api/orders"), { headers: { "X-Telegram-Init-Data": getInitData() } });
+      const res = await fetch(withDevUserId("/api/orders"), {
+        headers: {
+          "X-Telegram-Init-Data": getInitData(),
+          ...(isInTelegram() ? {} : { "X-Web-Client-Id": getWebClientId() }),
+        },
+      });
       if (!res.ok) throw new Error("failed");
       return (await res.json()) as { orders: Order[] };
     },
