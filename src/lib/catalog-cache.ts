@@ -66,7 +66,7 @@ export const getCachedProductBySlug = unstable_cache(
     const { data } = await supabase
       .from("products")
       .select(
-        "id, name, description, price, compare_at_price, images, stock_quantity, brands(name), product_tags(tags(name)), product_variants(id, size, color_name, color_hex, stock_quantity, is_active)"
+        "id, name, description, price, compare_at_price, images, stock_quantity, brands(name), product_tags(tags(name)), product_colors(id, name, hex, image_url, sort_order, product_variants(id, size, stock_quantity, is_active))"
       )
       .eq("slug", slug)
       .eq("is_active", true)

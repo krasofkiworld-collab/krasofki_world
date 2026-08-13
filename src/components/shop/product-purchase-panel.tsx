@@ -9,12 +9,20 @@ import { hapticLight } from "./telegram-init";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-type Variant = {
+type SizeVariant = {
   id: string;
   size: string;
-  color_name: string | null;
-  color_hex: string | null;
   stock_quantity: number;
+  is_active: boolean;
+};
+
+type ProductColor = {
+  id: string;
+  name: string;
+  hex: string | null;
+  image_url: string | null;
+  sort_order: number;
+  product_variants: SizeVariant[];
 };
 
 type Product = {
@@ -25,29 +33,45 @@ type Product = {
   stock_quantity: number;
 };
 
-export function ProductPurchasePanel({ product, variants }: { product: Product; variants: Variant[] }) {
+export function ProductPurchasePanel({
+  product,
+  colors,
+  onColorSelect,
+}: {
+  product: Product;
+  colors: ProductColor[];
+  /** Notified when the selected color changes, so the page can sync the gallery to that color's photo. */
+  onColorSelect?: (color: ProductColor | undefined) => void;
+}) {
   const items = useCart((s) => s.items);
   const add = useCart((s) => s.add);
-  const hasVariants = variants.length > 0;
+  const hasColors = colors.length > 0;
 
-  const sizes = useMemo(() => [...new Set(variants.map((v) => v.size))], [variants]);
-  const colors = useMemo(() => {
-    const seen = new Map<string, { name: string; hex: string | null }>();
-    for (const v of variants) {
-      if (v.color_name) seen.set(v.color_name, { name: v.color_name, hex: v.color_hex });
-    }
-    return [...seen.values()];
-  }, [variants]);
+  const [selectedColorId, setSelectedColorId] = useState<string | undefined>(colors[0]?.id);
+  const selectedColor = colors.find((c) => c.id === selectedColorId);
 
-  const [selectedSize, setSelectedSize] = useState<string | undefined>(sizes[0]);
-  const [selectedColor, setSelectedColor] = useState<string | undefined>(colors[0]?.name);
+  const sizes = useMemo(
+    () => (selectedColor?.product_variants ?? []).filter((v) => v.is_active),
+    [selectedColor]
+  );
+
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(sizes[0]?.size);
   const [qty, setQty] = useState(1);
 
-  const selectedVariant = hasVariants
-    ? variants.find((v) => v.size === selectedSize && (colors.length === 0 || v.color_name === selectedColor))
-    : undefined;
+  // Reset the size choice whenever the color changes — sizes belong to a color.
+  useEffect(() => {
+    setSelectedSize(sizes[0]?.size);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedColorId]);
 
-  const maxQty = hasVariants ? (selectedVariant?.stock_quantity ?? 0) : product.stock_quantity;
+  useEffect(() => {
+    onColorSelect?.(selectedColor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedColorId]);
+
+  const selectedVariant = hasColors ? sizes.find((v) => v.size === selectedSize) : undefined;
+
+  const maxQty = hasColors ? (selectedVariant?.stock_quantity ?? 0) : product.stock_quantity;
   const outOfStock = maxQty <= 0;
 
   // How many of this exact product+variant are already sitting in the
@@ -73,10 +97,12 @@ export function ProductPurchasePanel({ product, variants }: { product: Product; 
     add({
       productId: product.id,
       variantId: selectedVariant?.id,
-      variantLabel: selectedVariant ? [selectedVariant.size, selectedVariant.color_name].filter(Boolean).join(" / ") : undefined,
+      variantLabel: selectedVariant
+        ? [selectedColor?.name, selectedVariant.size].filter(Boolean).join(" / ")
+        : undefined,
       name: product.name,
       price: product.price,
-      image: product.images[0],
+      image: selectedColor?.image_url ?? product.images[0],
       qty,
     });
     hapticLight();
@@ -86,41 +112,16 @@ export function ProductPurchasePanel({ product, variants }: { product: Product; 
 
   return (
     <div className="flex flex-col gap-4">
-      {sizes.length > 0 && (
-        <div>
-          <p className="mb-2 text-sm font-medium">Розмір</p>
-          <div className="flex flex-wrap gap-2">
-            {sizes.map((size) => {
-              const availableForColor = variants.some(
-                (v) => v.size === size && (colors.length === 0 || v.color_name === selectedColor) && v.stock_quantity > 0
-              );
-              return (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  disabled={!availableForColor}
-                  className={cn(
-                    "flex size-10 items-center justify-center rounded-lg border text-sm",
-                    selectedSize === size ? "border-primary bg-primary text-primary-foreground" : "border-border",
-                    !availableForColor && "opacity-40"
-                  )}
-                >
-                  {size}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {colors.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-medium">Колір</p>
+          <p className="mb-2 text-sm font-medium">
+            Колір{selectedColor ? <span className="font-normal text-muted-foreground"> · {selectedColor.name}</span> : null}
+          </p>
           <div className="flex flex-wrap gap-2">
             {colors.map((c) => (
               <button
-                key={c.name}
-                onClick={() => setSelectedColor(c.name)}
+                key={c.id}
+                onClick={() => setSelectedColorId(c.id)}
                 aria-label={c.name}
                 title={c.name}
                 className={cn(
@@ -128,12 +129,34 @@ export function ProductPurchasePanel({ product, variants }: { product: Product; 
                   // Selected: ring sits offset from the fill by a visible gap
                   // (ring-offset), so it reads as "this one" instead of just
                   // a thicker edge that blends into the color itself.
-                  selectedColor === c.name
+                  selectedColorId === c.id
                     ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
                     : "ring-1 ring-border"
                 )}
                 style={{ backgroundColor: c.hex ?? "#ccc" }}
               />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {sizes.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-medium">Розмір</p>
+          <div className="flex flex-wrap gap-2">
+            {sizes.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => setSelectedSize(v.size)}
+                disabled={v.stock_quantity <= 0}
+                className={cn(
+                  "flex size-10 items-center justify-center rounded-lg border text-sm",
+                  selectedSize === v.size ? "border-primary bg-primary text-primary-foreground" : "border-border",
+                  v.stock_quantity <= 0 && "opacity-40"
+                )}
+              >
+                {v.size}
+              </button>
             ))}
           </div>
         </div>
