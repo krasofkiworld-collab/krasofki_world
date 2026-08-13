@@ -12,7 +12,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { data, error } = await supabaseServer
     .from("orders")
     .select(
-      "*, customers(username, first_name, last_name, telegram_user_id), order_items(id, product_name, variant_name, unit_price, quantity, line_total)"
+      "*, customers(username, first_name, last_name, telegram_user_id, phone, contact_telegram, source), order_items(id, product_name, variant_name, unit_price, quantity, line_total)"
     )
     .eq("id", id)
     .single();

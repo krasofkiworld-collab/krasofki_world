@@ -34,7 +34,7 @@ type Order = {
   total_amount: number;
   contact_phone: string;
   created_at: string;
-  customers: { username: string | null; first_name: string | null } | null;
+  customers: { username: string | null; first_name: string | null; last_name: string | null; source: string } | null;
 };
 
 export default function AdminOrdersPage() {
@@ -153,7 +153,13 @@ function AdminOrdersContent() {
                   {o.order_number}
                 </Link>
               </TableCell>
-              <TableCell>{o.customers?.username ? `@${o.customers.username}` : o.customers?.first_name ?? "—"}</TableCell>
+              <TableCell>
+                {o.customers?.source === "web"
+                  ? `${o.customers.first_name ?? ""} ${o.customers.last_name ?? ""}`.trim() || "—"
+                  : o.customers?.username
+                    ? `@${o.customers.username}`
+                    : o.customers?.first_name ?? "—"}
+              </TableCell>
               <TableCell>{formatMoney(o.total_amount)}</TableCell>
               <TableCell>
                 <Badge variant="secondary">{o.status}</Badge>

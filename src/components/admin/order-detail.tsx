@@ -38,7 +38,14 @@ type OrderDetail = {
   customer_note: string | null;
   admin_note: string | null;
   total_amount: number;
-  customers: { username: string | null; first_name: string | null; last_name: string | null } | null;
+  customers: {
+    username: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    phone: string | null;
+    contact_telegram: string | null;
+    source: string;
+  } | null;
   order_items: {
     id: string;
     product_name: string;
@@ -136,8 +143,24 @@ export function OrderDetail({ orderId }: { orderId: string }) {
       <Separator />
 
       <div className="text-sm">
-        <p>Клієнт: {order.customers?.username ? `@${order.customers.username}` : `${order.customers?.first_name ?? ""} ${order.customers?.last_name ?? ""}`}</p>
+        {order.customers?.source === "web" ? (
+          <>
+            <p>Ім&apos;я: {order.customers.first_name}</p>
+            <p>Прізвище: {order.customers.last_name}</p>
+            {order.customers.contact_telegram && <p>Telegram: {order.customers.contact_telegram}</p>}
+          </>
+        ) : (
+          <p>
+            Клієнт:{" "}
+            {order.customers?.username
+              ? `@${order.customers.username}`
+              : `${order.customers?.first_name ?? ""} ${order.customers?.last_name ?? ""}`}
+          </p>
+        )}
         <p>Телефон: {order.contact_phone}</p>
+        <Badge variant="outline" className="mt-0.5">
+          {order.customers?.source === "web" ? "Замовлено з сайту" : "Замовлено через Telegram"}
+        </Badge>
         <p>
           Доставка: {order.delivery_address.city}
           {order.delivery_address.branch ? `, відділення ${order.delivery_address.branch}` : ""}

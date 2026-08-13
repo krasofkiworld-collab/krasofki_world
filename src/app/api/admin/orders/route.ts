@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   let query = supabaseServer
     .from("orders")
     .select(
-      "id, order_number, status, payment_status, total_amount, contact_phone, created_at, customers(username, first_name)",
+      "id, order_number, status, payment_status, total_amount, contact_phone, created_at, source, customers(username, first_name, last_name, source)",
       { count: "exact" }
     )
     .order("created_at", { ascending: false });
