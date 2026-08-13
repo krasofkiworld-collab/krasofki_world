@@ -10,6 +10,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
+      // Bottom-anchored toasts sit under the shop's sticky bottom nav —
+      // top-center keeps them visible on every page instead.
+      position="top-center"
       className="toaster group"
       icons={{
         success: (
