@@ -46,7 +46,7 @@ export async function notifyStaff(orderId: string, message: string) {
 
 export const orderMessages = {
   created: (orderNumber: string, total: number) =>
-    `✅ Замовлення ${orderNumber} прийнято!\nСума: ${total} грн.\n\nВже беремо його в роботу — напишемо, як тільки підтвердимо 🙌`,
+    `✅ Замовлення ${orderNumber} прийнято!\nСума: ${total} грн.\n\nНезабаром з вами зв'яжеться менеджер для підтвердження 🙌`,
   createdForStaff: (orderNumber: string, total: number, username?: string | null) =>
     `🆕 Нове замовлення ${orderNumber} на ${total} грн${username ? ` від @${username}` : ""}.`,
   confirmed: (orderNumber: string) =>

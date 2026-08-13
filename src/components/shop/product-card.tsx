@@ -9,6 +9,7 @@ import { Plus, Heart } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { useCart } from "@/stores/cart";
 import { useFavorites } from "@/stores/favorites";
+import { MAX_QTY_PER_ITEM } from "@/lib/constants";
 import { hapticLight } from "./telegram-init";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -36,7 +37,9 @@ export function ProductCard({ product }: { product: Product }) {
   // above: this can be true even when the product itself still has stock.
   const alreadyInCart =
     items.find((i) => i.productId === product.id && i.variantId === undefined)?.qty ?? 0;
-  const maxedInCart = alreadyInCart >= product.stock_quantity;
+  // Same reasoning as the purchase panel: cap at stock AND the fixed
+  // per-order limit, whichever is stricter, so one buyer can't sweep the shelf.
+  const maxedInCart = alreadyInCart >= Math.min(product.stock_quantity, MAX_QTY_PER_ITEM);
   const discountPct = product.compare_at_price
     ? Math.round((1 - product.price / product.compare_at_price) * 100)
     : 0;

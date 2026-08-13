@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_QTY_PER_ITEM } from "@/lib/constants";
 
 export const createOrderSchema = z.object({
   items: z
@@ -6,7 +7,7 @@ export const createOrderSchema = z.object({
       z.object({
         productId: z.string().uuid(),
         variantId: z.string().uuid().optional(),
-        qty: z.number().int().min(1).max(50),
+        qty: z.number().int().min(1).max(MAX_QTY_PER_ITEM, `Максимум ${MAX_QTY_PER_ITEM} шт. одного товару в одному замовленні`),
       })
     )
     .min(1, "Кошик порожній"),

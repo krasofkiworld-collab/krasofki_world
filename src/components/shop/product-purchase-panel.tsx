@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { useCart } from "@/stores/cart";
+import { MAX_QTY_PER_ITEM } from "@/lib/constants";
 import { hapticLight } from "./telegram-init";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -81,7 +82,9 @@ export function ProductPurchasePanel({
   // the running total already in the cart).
   const alreadyInCart =
     items.find((i) => i.productId === product.id && i.variantId === selectedVariant?.id)?.qty ?? 0;
-  const availableToAdd = Math.max(0, maxQty - alreadyInCart);
+  // Clamp against both the real stock and the fixed per-order cap — whichever is stricter —
+  // so one buyer can't take the entire shelf even when there's plenty left.
+  const availableToAdd = Math.max(0, Math.min(maxQty, MAX_QTY_PER_ITEM) - alreadyInCart);
   const maxedInCart = !outOfStock && availableToAdd <= 0;
 
   // Clamp qty to what's actually available every time the selected
