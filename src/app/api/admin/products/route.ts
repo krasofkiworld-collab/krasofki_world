@@ -2,15 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { colorSchema, insertColors } from "@/lib/admin/product-colors";
 import { z } from "zod";
-
-const variantSchema = z.object({
-  size: z.string().min(1),
-  color_name: z.string().optional().nullable(),
-  color_hex: z.string().optional().nullable(),
-  stock_quantity: z.number().int().min(0).default(0),
-  sku: z.string().optional().nullable(),
-});
 
 const productSchema = z.object({
   name: z.string().min(1),
@@ -24,7 +17,7 @@ const productSchema = z.object({
   stock_quantity: z.number().int().min(0),
   is_active: z.boolean().default(true),
   tag_ids: z.array(z.string().uuid()).default([]),
-  variants: z.array(variantSchema).default([]),
+  colors: z.array(colorSchema).default([]),
 });
 
 const ADMIN_PAGE_SIZE = 20;
@@ -68,7 +61,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
   }
-  const { tag_ids, variants, ...productData } = parsed.data;
+  const { tag_ids, colors, ...productData } = parsed.data;
 
   const { data: product, error } = await supabaseServer.from("products").insert(productData).select("id").single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -76,10 +69,10 @@ export async function POST(req: NextRequest) {
   if (tag_ids.length) {
     await supabaseServer.from("product_tags").insert(tag_ids.map((tag_id) => ({ product_id: product.id, tag_id })));
   }
-  if (variants.length) {
-    await supabaseServer
-      .from("product_variants")
-      .insert(variants.map((v) => ({ ...v, product_id: product.id })));
+  try {
+    await insertColors(product.id, colors);
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "failed to save colors" }, { status: 500 });
   }
 
   revalidateTag("catalog:products", { expire: 0 });

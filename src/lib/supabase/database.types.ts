@@ -351,6 +351,44 @@ export type Database = {
           },
         ]
       }
+      product_colors: {
+        Row: {
+          created_at: string
+          hex: string | null
+          id: string
+          image_url: string | null
+          name: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          hex?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          hex?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_colors_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_tags: {
         Row: {
           product_id: string
@@ -383,42 +421,46 @@ export type Database = {
       }
       product_variants: {
         Row: {
-          color_hex: string | null
-          color_name: string | null
           created_at: string
           id: string
           is_active: boolean
           price_override: number | null
+          product_color_id: string | null
           product_id: string
           size: string | null
           sku: string | null
           stock_quantity: number
         }
         Insert: {
-          color_hex?: string | null
-          color_name?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           price_override?: number | null
+          product_color_id?: string | null
           product_id: string
           size?: string | null
           sku?: string | null
           stock_quantity?: number
         }
         Update: {
-          color_hex?: string | null
-          color_name?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           price_override?: number | null
+          product_color_id?: string | null
           product_id?: string
           size?: string | null
           sku?: string | null
           stock_quantity?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "product_variants_product_color_id_fkey"
+            columns: ["product_color_id"]
+            isOneToOne: false
+            referencedRelation: "product_colors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_variants_product_id_fkey"
             columns: ["product_id"]
@@ -604,6 +646,8 @@ export type Database = {
         Returns: string
       }
       next_order_number: { Args: never; Returns: string }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       delivery_method: "nova_poshta_branch" | "nova_poshta_courier" | "pickup"

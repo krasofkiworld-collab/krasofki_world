@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     variantIds.length
       ? supabaseServer
           .from("product_variants")
-          .select("id, product_id, size, color_name, price_override, stock_quantity, is_active")
+          .select("id, product_id, size, price_override, stock_quantity, is_active, product_colors(name)")
           .in("id", variantIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
       product_id: item.productId,
       variant_id: item.variantId ?? null,
       product_name: product.name,
-      variant_name: variant ? [variant.size, variant.color_name].filter(Boolean).join(" / ") : null,
+      variant_name: variant ? [variant.size, variant.product_colors?.name].filter(Boolean).join(" / ") : null,
       unit_price: price,
       quantity: item.qty,
       line_total: price * item.qty,

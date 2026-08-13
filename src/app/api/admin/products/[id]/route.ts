@@ -2,15 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { colorSchema, replaceColors } from "@/lib/admin/product-colors";
 import { z } from "zod";
-
-const variantSchema = z.object({
-  size: z.string().min(1),
-  color_name: z.string().optional().nullable(),
-  color_hex: z.string().optional().nullable(),
-  stock_quantity: z.number().int().min(0).default(0),
-  sku: z.string().optional().nullable(),
-});
 
 const productUpdateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -24,7 +17,7 @@ const productUpdateSchema = z.object({
   stock_quantity: z.number().int().min(0).optional(),
   is_active: z.boolean().optional(),
   tag_ids: z.array(z.string().uuid()).optional(),
-  variants: z.array(variantSchema).optional(),
+  colors: z.array(colorSchema).optional(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -34,7 +27,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const { data, error } = await supabaseServer
     .from("products")
-    .select("*, product_tags(tag_id), product_variants(id, size, color_name, color_hex, stock_quantity, sku)")
+    .select(
+      "*, product_tags(tag_id), product_colors(id, name, hex, image_url, sort_order, product_variants(id, size, stock_quantity, sku))"
+    )
     .eq("id", id)
     .single();
 
@@ -51,7 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
   }
-  const { tag_ids, variants, ...productData } = parsed.data;
+  const { tag_ids, colors, ...productData } = parsed.data;
 
   if (Object.keys(productData).length) {
     const { error } = await supabaseServer.from("products").update(productData).eq("id", id);
@@ -65,12 +60,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  if (variants) {
-    await supabaseServer.from("product_variants").delete().eq("product_id", id);
-    if (variants.length) {
-      await supabaseServer
-        .from("product_variants")
-        .insert(variants.map((v) => ({ ...v, product_id: id })));
+  if (colors) {
+    try {
+      await replaceColors(id, colors);
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : "failed to save colors" }, { status: 500 });
     }
   }
 
