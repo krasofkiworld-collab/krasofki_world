@@ -237,7 +237,7 @@ export function ProductForm({ productId }: { productId?: string }) {
               value={form.watch("category_id")}
               onValueChange={(v) => form.setValue("category_id", v ?? undefined)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Без категорії">
                   {(value: string) => categories?.find((c) => c.id === value)?.name}
                 </SelectValue>
@@ -255,7 +255,7 @@ export function ProductForm({ productId }: { productId?: string }) {
           <div className="flex flex-col gap-1.5">
             <Label>Бренд</Label>
             <Select value={form.watch("brand_id")} onValueChange={(v) => form.setValue("brand_id", v ?? undefined)}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Без бренду">
                   {(value: string) => brands?.find((b) => b.id === value)?.name}
                 </SelectValue>

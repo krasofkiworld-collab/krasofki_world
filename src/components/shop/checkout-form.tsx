@@ -9,30 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useCart, cartTotal } from "@/stores/cart";
 import { formatMoney } from "@/lib/format";
 import { getInitData, withDevUserId, isInTelegram } from "./telegram-init";
 import { getWebClientId } from "./web-client-id";
 import { toast } from "sonner";
 
-const DELIVERY_LABELS: Record<string, string> = {
-  nova_poshta_branch: "Нова Пошта — відділення",
-  nova_poshta_courier: "Нова Пошта — кур'єр",
-  pickup: "Самовивіз",
-};
-
+// Only Nova Poshta branch delivery is offered right now — courier and
+// pickup are still valid values on the backend/DB enum, just not exposed here.
 const checkoutSchema = z.object({
-  deliveryMethod: z.enum(["nova_poshta_branch", "nova_poshta_courier", "pickup"]),
   city: z.string().min(1, "Вкажіть місто"),
-  branch: z.string().optional(),
-  street: z.string().optional(),
+  branch: z.string().min(1, "Вкажіть номер відділення"),
   contactPhone: z.string().regex(/^\+?380\d{9}$/, "Формат: +380XXXXXXXXX"),
   note: z.string().max(500).optional(),
   firstName: z.string().optional(),
@@ -60,10 +47,7 @@ export function CheckoutForm() {
             lastName: z.string().min(1, "Вкажіть прізвище"),
           })
     ),
-    defaultValues: { deliveryMethod: "nova_poshta_branch" },
   });
-
-  const deliveryMethod = form.watch("deliveryMethod");
 
   async function onSubmit(values: CheckoutValues) {
     setSubmitting(true);
@@ -77,8 +61,8 @@ export function CheckoutForm() {
         },
         body: JSON.stringify({
           items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, qty: i.qty })),
-          deliveryMethod: values.deliveryMethod,
-          deliveryAddress: { city: values.city, branch: values.branch, street: values.street },
+          deliveryMethod: "nova_poshta_branch",
+          deliveryAddress: { city: values.city, branch: values.branch },
           contactPhone: values.contactPhone,
           note: values.note,
           ...(inTelegram
@@ -129,19 +113,7 @@ export function CheckoutForm() {
 
       <div className="flex flex-col gap-1.5">
         <Label>Спосіб доставки</Label>
-        <Select
-          defaultValue="nova_poshta_branch"
-          onValueChange={(v) => v && form.setValue("deliveryMethod", v as CheckoutValues["deliveryMethod"])}
-        >
-          <SelectTrigger>
-            <SelectValue>{(value: string) => DELIVERY_LABELS[value]}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="nova_poshta_branch">Нова Пошта — відділення</SelectItem>
-            <SelectItem value="nova_poshta_courier">Нова Пошта — кур'єр</SelectItem>
-            <SelectItem value="pickup">Самовивіз</SelectItem>
-          </SelectContent>
-        </Select>
+        <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">Нова Пошта — відділення</p>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -152,19 +124,13 @@ export function CheckoutForm() {
         )}
       </div>
 
-      {deliveryMethod === "nova_poshta_branch" && (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="branch">№ відділення</Label>
-          <Input id="branch" {...form.register("branch")} placeholder="Відділення №5" />
-        </div>
-      )}
-
-      {deliveryMethod === "nova_poshta_courier" && (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="street">Адреса</Label>
-          <Input id="street" {...form.register("street")} placeholder="вул. Хрещатик, 1" />
-        </div>
-      )}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="branch">№ відділення</Label>
+        <Input id="branch" {...form.register("branch")} placeholder="Відділення №5" />
+        {form.formState.errors.branch && (
+          <p className="text-xs text-destructive">{form.formState.errors.branch.message}</p>
+        )}
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="contactPhone">Телефон</Label>

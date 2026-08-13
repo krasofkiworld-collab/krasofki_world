@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -10,9 +11,8 @@ import { formatMoney } from "@/lib/format";
 import { useCart } from "@/stores/cart";
 import { useFavorites } from "@/stores/favorites";
 import { MAX_QTY_PER_ITEM } from "@/lib/constants";
-import { hapticLight } from "./telegram-init";
+import { AddToCartDrawer } from "./add-to-cart-drawer";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 type Product = {
   id: string;
@@ -27,7 +27,7 @@ type Product = {
 
 export function ProductCard({ product }: { product: Product }) {
   const items = useCart((s) => s.items);
-  const add = useCart((s) => s.add);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const isFavorite = useFavorites((s) => s.isFavorite(product.id));
   const toggleFavorite = useFavorites((s) => s.toggle);
   const outOfStock = product.stock_quantity <= 0;
@@ -85,13 +85,13 @@ export function ProductCard({ product }: { product: Product }) {
           <Link href={`/product/${product.slug}`} className="line-clamp-2 text-sm font-medium">
             {product.name}
           </Link>
-          <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="font-semibold">{formatMoney(product.price)}</span>
+          <div className="mt-1 flex flex-col">
             {product.compare_at_price && product.compare_at_price > product.price && (
               <span className="text-xs text-muted-foreground/70 line-through">
                 {formatMoney(product.compare_at_price)}
               </span>
             )}
+            <span className="font-semibold">{formatMoney(product.price)}</span>
           </div>
         </div>
         <Button
@@ -99,15 +99,13 @@ export function ProductCard({ product }: { product: Product }) {
           variant="secondary"
           className="rounded-full"
           disabled={outOfStock || maxedInCart}
-          onClick={() => {
-            add({ productId: product.id, name: product.name, price: product.price, image: product.images[0], qty: 1 });
-            hapticLight();
-            toast.success("Додано в кошик");
-          }}
+          onClick={() => setDrawerOpen(true)}
         >
           <Plus className="size-4" />
         </Button>
       </div>
+
+      <AddToCartDrawer product={product} open={drawerOpen} onOpenChange={setDrawerOpen} />
     </Card>
   );
 }
