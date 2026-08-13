@@ -89,35 +89,37 @@ export default function AdminBrandsPage() {
         </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Лого</TableHead>
-            <TableHead>Назва</TableHead>
-            <TableHead>Slug</TableHead>
-            <TableHead>Статус</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data?.map((b) => (
-            <TableRow key={b.id} className="cursor-pointer" onClick={() => toggleActive(b)}>
-              <TableCell>
-                {b.logo_url && (
-                  // eslint-disable-next-line @next/next/no-img-element -- admin-entered, arbitrary external domain
-                  <img src={b.logo_url} alt={b.name} className="size-8 rounded-full object-cover" />
-                )}
-              </TableCell>
-              <TableCell>{b.name}</TableCell>
-              <TableCell className="text-muted-foreground">{b.slug}</TableCell>
-              <TableCell>
-                <Badge variant={b.is_active ? "default" : "secondary"}>
-                  {b.is_active ? "Активний" : "Прихований"}
-                </Badge>
-              </TableCell>
+      <div className="rounded-2xl bg-card ring-1 ring-foreground/10">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Лого</TableHead>
+              <TableHead>Назва</TableHead>
+              <TableHead>Slug</TableHead>
+              <TableHead>Статус</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {data?.map((b) => (
+              <TableRow key={b.id} className="cursor-pointer" onClick={() => toggleActive(b)}>
+                <TableCell>
+                  {b.logo_url && (
+                    // eslint-disable-next-line @next/next/no-img-element -- admin-entered, arbitrary external domain
+                    <img src={b.logo_url} alt={b.name} className="size-8 rounded-full object-cover" />
+                  )}
+                </TableCell>
+                <TableCell>{b.name}</TableCell>
+                <TableCell className="text-muted-foreground">{b.slug}</TableCell>
+                <TableCell>
+                  <Badge variant={b.is_active ? "default" : "secondary"}>
+                    {b.is_active ? "Активний" : "Прихований"}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

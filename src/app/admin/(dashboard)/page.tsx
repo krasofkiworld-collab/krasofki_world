@@ -1,13 +1,24 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ShoppingBag, Wallet, PackageX } from "lucide-react";
 import { supabaseServer } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/format";
 import { SalesChart } from "@/components/admin/sales-chart";
+import { StatCard } from "@/components/admin/stat-card";
 
 export const revalidate = 0;
 
 const WEEKDAY_LABELS = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Нове",
+  confirmed: "Підтверджено",
+  shipped: "Відправлено",
+  completed: "Завершено",
+  cancelled: "Скасовано",
+};
 
 export default async function AdminDashboardPage() {
   const todayStart = new Date();
@@ -80,42 +91,50 @@ export default async function AdminDashboardPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Нові замовлення</p>
-          <p className="text-2xl font-semibold">{pendingCount ?? 0}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Оплачено сьогодні</p>
-          <p className="text-2xl font-semibold">{formatMoney(todayTotal)}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Товари, що закінчуються</p>
-          <p className="text-2xl font-semibold">{lowStock?.length ?? 0}</p>
-        </Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard icon={ShoppingBag} label="Нові замовлення" value={String(pendingCount ?? 0)} />
+        <StatCard icon={Wallet} label="Оплачено сьогодні" value={formatMoney(todayTotal)} />
+        <StatCard icon={PackageX} label="Товари, що закінчуються" value={String(lowStock?.length ?? 0)} />
       </div>
 
-      <Card className="p-4">
-        <h2 className="mb-2 font-medium">Продажі за 7 днів</h2>
+      <div className="rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
+        <h2 className="mb-4 font-medium">Продажі за 7 днів</h2>
         <SalesChart data={chartData} />
-      </Card>
+      </div>
 
-      <div>
-        <h2 className="mb-2 font-medium">Останні замовлення</h2>
-        <div className="flex flex-col gap-2">
-          {(recentOrders ?? []).map((order) => (
-            <Link key={order.id} href={`/admin/orders/${order.id}`}>
-              <Card className="flex-row items-center justify-between p-3">
-                <span>{order.order_number}</span>
-                <div className="flex items-center gap-3">
-                  <span>{formatMoney(order.total_amount)}</span>
-                  <Badge variant="secondary">{order.status}</Badge>
-                </div>
-              </Card>
-            </Link>
-          ))}
-          {!recentOrders?.length && <p className="text-sm text-muted-foreground">Замовлень ще немає.</p>}
-        </div>
+      <div className="rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
+        <h2 className="mb-4 font-medium">Останні замовлення</h2>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Номер</TableHead>
+              <TableHead>Сума</TableHead>
+              <TableHead>Статус</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(recentOrders ?? []).map((order) => (
+              <TableRow key={order.id}>
+                <TableCell>
+                  <Link href={`/admin/orders/${order.id}`} className="hover:underline">
+                    {order.order_number}
+                  </Link>
+                </TableCell>
+                <TableCell>{formatMoney(order.total_amount)}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary">{STATUS_LABEL[order.status] ?? order.status}</Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+            {!recentOrders?.length && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                  Замовлень ще немає.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

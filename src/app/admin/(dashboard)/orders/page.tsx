@@ -129,6 +129,7 @@ function AdminOrdersContent() {
         />
       </div>
 
+      <div className="rounded-2xl bg-card ring-1 ring-foreground/10">
       <Table>
         <TableHeader>
           <TableRow>
@@ -190,6 +191,7 @@ function AdminOrdersContent() {
           )}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

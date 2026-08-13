@@ -68,30 +68,32 @@ export default function AdminCategoriesPage() {
         </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Назва</TableHead>
-            <TableHead>Slug</TableHead>
-            <TableHead>Порядок</TableHead>
-            <TableHead>Статус</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data?.map((c) => (
-            <TableRow key={c.id} className="cursor-pointer" onClick={() => toggleActive(c)}>
-              <TableCell>{c.name}</TableCell>
-              <TableCell className="text-muted-foreground">{c.slug}</TableCell>
-              <TableCell>{c.sort_order}</TableCell>
-              <TableCell>
-                <Badge variant={c.is_active ? "default" : "secondary"}>
-                  {c.is_active ? "Активна" : "Прихована"}
-                </Badge>
-              </TableCell>
+      <div className="rounded-2xl bg-card ring-1 ring-foreground/10">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Назва</TableHead>
+              <TableHead>Slug</TableHead>
+              <TableHead>Порядок</TableHead>
+              <TableHead>Статус</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {data?.map((c) => (
+              <TableRow key={c.id} className="cursor-pointer" onClick={() => toggleActive(c)}>
+                <TableCell>{c.name}</TableCell>
+                <TableCell className="text-muted-foreground">{c.slug}</TableCell>
+                <TableCell>{c.sort_order}</TableCell>
+                <TableCell>
+                  <Badge variant={c.is_active ? "default" : "secondary"}>
+                    {c.is_active ? "Активна" : "Прихована"}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
