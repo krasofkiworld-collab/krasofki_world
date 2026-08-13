@@ -82,10 +82,10 @@ export function ProductCard({ product }: { product: Product }) {
           <Link href={`/product/${product.slug}`} className="line-clamp-2 text-sm font-medium">
             {product.name}
           </Link>
-          <div className="mt-1 flex items-baseline gap-1.5">
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="font-semibold">{formatMoney(product.price)}</span>
-            {product.compare_at_price && (
-              <span className="text-xs text-muted-foreground line-through">
+            {product.compare_at_price && product.compare_at_price > product.price && (
+              <span className="text-xs text-muted-foreground/70 line-through">
                 {formatMoney(product.compare_at_price)}
               </span>
             )}

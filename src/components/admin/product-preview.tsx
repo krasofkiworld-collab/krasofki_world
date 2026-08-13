@@ -13,9 +13,7 @@ type PreviewData = {
   description?: string;
 };
 
-/** Mimics one cell of the catalog's 2-col grid, surrounded by 3 placeholder
- * cells — shows how this product's card will sit among others without
- * needing real sibling products. */
+/** Mimics one card exactly as it'll look on the storefront catalog. */
 export function CatalogGridPreview({ data }: { data: PreviewData }) {
   const discountPct = data.compareAtPrice
     ? Math.round((1 - data.price / data.compareAtPrice) * 100)
@@ -23,50 +21,44 @@ export function CatalogGridPreview({ data }: { data: PreviewData }) {
   const cover = data.images[0];
 
   return (
-    <div className="grid w-full max-w-[280px] grid-cols-2 gap-3">
-      <div className="overflow-hidden rounded-2xl border bg-card">
-        <div className="relative aspect-square bg-muted">
-          {cover ? (
-            // eslint-disable-next-line @next/next/no-img-element -- mix of blob: previews and remote URLs
-            <img src={cover} alt="" className="size-full object-cover" />
-          ) : (
-            <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
-              Немає фото
-            </div>
-          )}
-          <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-background/90">
-            <Heart className="size-3 text-muted-foreground" />
-          </span>
-          {discountPct > 0 && (
-            <Badge className="absolute left-2 top-2 bg-destructive text-white hover:bg-destructive">
-              -{discountPct}%
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-start justify-between gap-2 p-2.5">
-          <div className="min-w-0">
-            {data.brandName && (
-              <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{data.brandName}</p>
-            )}
-            <p className="line-clamp-2 text-xs font-medium">{data.name || "Назва товару"}</p>
-            <div className="mt-0.5 flex items-baseline gap-1">
-              <span className="text-xs font-semibold">{formatMoney(data.price || 0)}</span>
-              {!!data.compareAtPrice && (
-                <span className="text-[10px] text-muted-foreground line-through">
-                  {formatMoney(data.compareAtPrice)}
-                </span>
-              )}
-            </div>
+    <div className="w-full max-w-[160px] overflow-hidden rounded-2xl border bg-card">
+      <div className="relative aspect-square bg-muted">
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element -- mix of blob: previews and remote URLs
+          <img src={cover} alt="" className="size-full object-cover" />
+        ) : (
+          <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
+            Немає фото
           </div>
-          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary">
-            <Plus className="size-3" />
-          </span>
-        </div>
+        )}
+        <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-background/90">
+          <Heart className="size-3 text-muted-foreground" />
+        </span>
+        {discountPct > 0 && (
+          <Badge className="absolute left-2 top-2 bg-destructive text-white hover:bg-destructive">
+            -{discountPct}%
+          </Badge>
+        )}
       </div>
-
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-muted" />
-      ))}
+      <div className="flex items-start justify-between gap-2 p-2.5">
+        <div className="min-w-0">
+          {data.brandName && (
+            <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{data.brandName}</p>
+          )}
+          <p className="line-clamp-2 text-xs font-medium">{data.name || "Назва товару"}</p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+            <span className="text-xs font-semibold">{formatMoney(data.price || 0)}</span>
+            {!!data.compareAtPrice && data.compareAtPrice > data.price && (
+              <span className="text-[10px] text-muted-foreground/70 line-through">
+                {formatMoney(data.compareAtPrice)}
+              </span>
+            )}
+          </div>
+        </div>
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary">
+          <Plus className="size-3" />
+        </span>
+      </div>
     </div>
   );
 }
@@ -99,10 +91,10 @@ export function ProductDetailPreview({ data }: { data: PreviewData }) {
           <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{data.brandName}</p>
         )}
         <p className="text-sm font-semibold">{data.name || "Назва товару"}</p>
-        <div className="mt-0.5 flex items-baseline gap-1.5">
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span className="text-sm font-bold">{formatMoney(data.price || 0)}</span>
-          {!!data.compareAtPrice && (
-            <span className="text-xs text-muted-foreground line-through">{formatMoney(data.compareAtPrice)}</span>
+          {!!data.compareAtPrice && data.compareAtPrice > data.price && (
+            <span className="text-xs text-muted-foreground/70 line-through">{formatMoney(data.compareAtPrice)}</span>
           )}
         </div>
       </div>
