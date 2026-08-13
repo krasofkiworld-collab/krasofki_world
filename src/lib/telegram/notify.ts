@@ -46,13 +46,15 @@ export async function notifyStaff(orderId: string, message: string) {
 
 export const orderMessages = {
   created: (orderNumber: string, total: number) =>
-    `✅ Замовлення ${orderNumber} прийнято! Сума: ${total} грн. Ми повідомимо, коли підтвердимо.`,
+    `✅ Замовлення ${orderNumber} прийнято!\nСума: ${total} грн.\n\nВже беремо його в роботу — напишемо, як тільки підтвердимо 🙌`,
   createdForStaff: (orderNumber: string, total: number, username?: string | null) =>
     `🆕 Нове замовлення ${orderNumber} на ${total} грн${username ? ` від @${username}` : ""}.`,
-  confirmed: (orderNumber: string) => `📦 Замовлення ${orderNumber} підтверджено, готуємо до відправки.`,
+  confirmed: (orderNumber: string) =>
+    `📦 Замовлення ${orderNumber} підтверджено!\nПакуємо та готуємо до відправки — тримаємо в курсі 👌`,
   shipped: (orderNumber: string, ttn?: string | null) =>
-    `🚚 Замовлення ${orderNumber} відправлено.${ttn ? ` ТТН: ${ttn}` : ""}`,
-  completed: (orderNumber: string) => `🎉 Дякуємо за покупку! Замовлення ${orderNumber} отримано.`,
+    `🚚 Замовлення ${orderNumber} в дорозі!${ttn ? `\nТТН: ${ttn}` : ""}\n\nЗовсім скоро буде у вас 🔥`,
+  completed: (orderNumber: string) =>
+    `🎉 Дякуємо за покупку!\nЗамовлення ${orderNumber} отримано.\n\nСподіваємось, вам сподобалось 💛 Незабаром тут можна буде залишити відгук — поки що цієї функції немає, але ми над цим працюємо 👀`,
   cancelled: (orderNumber: string, reason?: string | null) =>
-    `❌ Замовлення ${orderNumber} скасовано.${reason ? ` Причина: ${reason}` : ""}`,
+    `❌ Замовлення ${orderNumber} скасовано.${reason ? `\nПричина: ${reason}` : ""}`,
 };
