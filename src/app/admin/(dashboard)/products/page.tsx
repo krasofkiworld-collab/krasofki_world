@@ -17,6 +17,7 @@ type Product = {
   price: number;
   stock_quantity: number;
   is_active: boolean;
+  images: string[];
   categories: { name: string } | null;
 };
 
@@ -51,6 +52,7 @@ export default function AdminProductsPage() {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Фото</TableHead>
             <TableHead>Назва</TableHead>
             <TableHead>Категорія</TableHead>
             <TableHead>Ціна</TableHead>
@@ -61,11 +63,17 @@ export default function AdminProductsPage() {
         <TableBody>
           {isLoading && (
             <TableRow>
-              <TableCell colSpan={5}>Завантаження...</TableCell>
+              <TableCell colSpan={6}>Завантаження...</TableCell>
             </TableRow>
           )}
           {products.map((p) => (
             <TableRow key={p.id} className="cursor-pointer">
+              <TableCell>
+                {p.images[0] && (
+                  // eslint-disable-next-line @next/next/no-img-element -- small fixed-size thumbnail, not worth Image's overhead here
+                  <img src={p.images[0]} alt="" className="size-9 rounded-md object-cover" />
+                )}
+              </TableCell>
               <TableCell>
                 <Link href={`/admin/products/${p.id}`} className="hover:underline">
                   {p.name}
@@ -85,14 +93,14 @@ export default function AdminProductsPage() {
           ))}
           {!isLoading && !products.length && (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
+              <TableCell colSpan={6} className="text-center text-muted-foreground">
                 Товарів ще немає.
               </TableCell>
             </TableRow>
           )}
           {hasNextPage && (
             <TableRow ref={sentinelRef}>
-              <TableCell colSpan={5} className="text-center text-xs text-muted-foreground">
+              <TableCell colSpan={6} className="text-center text-xs text-muted-foreground">
                 {isFetchingNextPage ? "Завантаження ще…" : ""}
               </TableCell>
             </TableRow>
