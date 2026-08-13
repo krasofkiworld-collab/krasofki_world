@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatMoney } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { ProductGallery } from "@/components/shop/product-gallery";
@@ -28,16 +28,26 @@ type Product = {
 
 export function ProductDetail({ product }: { product: Product }) {
   // Only sizes with a non-null label are sellable — DB allows null while a variant row is mid-edit in the admin.
-  const colors = (product.product_colors ?? []).map((c) => ({
-    ...c,
-    product_variants: c.product_variants.filter((v): v is typeof v & { size: string } => v.size != null),
-  }));
+  // Memoized so the array/object identities stay stable across re-renders
+  // (e.g. focusUrl updates) — the gallery's carousel-setup effect depends
+  // on `images` by reference and would re-fire on every render otherwise.
+  const colors = useMemo(
+    () =>
+      (product.product_colors ?? []).map((c) => ({
+        ...c,
+        product_variants: c.product_variants.filter((v): v is typeof v & { size: string } => v.size != null),
+      })),
+    [product]
+  );
   const tags = (product.product_tags ?? []).map((pt) => pt.tags?.name).filter((n): n is string => !!n);
 
   // The gallery shows the product's own photos plus every color's own photo
   // (deduped) so selecting a color can jump straight to its picture without
   // needing a second image source.
-  const galleryImages = [...new Set([...product.images, ...colors.map((c) => c.image_url).filter((u): u is string => !!u)])];
+  const galleryImages = useMemo(
+    () => [...new Set([...product.images, ...colors.map((c) => c.image_url).filter((u): u is string => !!u)])],
+    [product, colors]
+  );
 
   const [focusUrl, setFocusUrl] = useState<string | null>(null);
 
