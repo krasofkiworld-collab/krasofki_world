@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Script from "next/script";
 
 declare global {
@@ -14,6 +15,12 @@ declare global {
         initData: string;
         initDataUnsafe: { user?: { id: number; username?: string; first_name?: string } };
         HapticFeedback?: { impactOccurred: (style: "light" | "medium" | "heavy") => void };
+        BackButton?: {
+          show: () => void;
+          hide: () => void;
+          onClick: (cb: () => void) => void;
+          offClick: (cb: () => void) => void;
+        };
       };
     };
   }
@@ -50,6 +57,24 @@ export function isInTelegram(): boolean {
 
 export function hapticLight() {
   window.Telegram?.WebApp.HapticFeedback?.impactOccurred("light");
+}
+
+/**
+ * Shows Telegram's native chrome back button (matching the platform's own
+ * back-navigation pattern, per Telegram's Mini App design guidelines) for as
+ * long as the calling component is mounted. No-op outside Telegram.
+ */
+export function useTelegramBackButton(onBack: () => void) {
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg?.BackButton) return;
+    tg.BackButton.show();
+    tg.BackButton.onClick(onBack);
+    return () => {
+      tg.BackButton?.offClick(onBack);
+      tg.BackButton?.hide();
+    };
+  }, [onBack]);
 }
 
 /**

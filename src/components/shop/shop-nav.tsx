@@ -24,7 +24,7 @@ export function ShopNav() {
     <nav className="sticky bottom-0 z-10 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto grid max-w-lg grid-cols-4">
         {tabs.map(({ href, label, icon: Icon, badge }) => {
-          const active = pathname === href;
+          const active = href === "/" ? pathname === href : pathname.startsWith(href);
           return (
             <Link
               key={href}

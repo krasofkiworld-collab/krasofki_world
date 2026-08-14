@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
-import { ChevronLeft, Heart } from "lucide-react";
+import { ChevronLeft, Heart, X } from "lucide-react";
 import { useFavorites } from "@/stores/favorites";
+import { useTelegramBackButton, isInTelegram } from "./telegram-init";
 import { cn } from "@/lib/utils";
 
 export function ProductGallery({
@@ -19,10 +20,23 @@ export function ProductGallery({
   /** When set to an URL present in `images`, the carousel scrolls there (e.g. a color swatch's own photo). */
   focusUrl?: string | null;
 }) {
+  const router = useRouter();
   const isFavorite = useFavorites((s) => s.isFavorite(productId));
   const toggleFavorite = useFavorites((s) => s.toggle);
   const trackRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [fullscreen, setFullscreen] = useState(false);
+  // Telegram's own SDK script loads asynchronously — default to showing our
+  // own chevron until we can confirm the native chrome back button applies.
+  const [inTelegram, setInTelegram] = useState(false);
+  useEffect(() => setInTelegram(isInTelegram()), []);
+
+  const goBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) router.back();
+    else router.push("/");
+  }, [router]);
+
+  useTelegramBackButton(goBack);
 
   // With 2+ photos the carousel loops: a clone of the last photo is
   // prepended and a clone of the first is appended, so scrolling past
@@ -100,6 +114,8 @@ export function ProductGallery({
     };
   }, [loop, images.length, loopImages.length]);
 
+  const activeImage = images[activeIndex];
+
   return (
     <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
       <div
@@ -118,7 +134,14 @@ export function ProductGallery({
                 loop ? "w-[82%]" : "w-full"
               )}
             >
-              <Image src={src} alt={name} fill priority={i === (loop ? 1 : 0)} className="object-cover" />
+              <button
+                type="button"
+                onClick={() => setFullscreen(true)}
+                aria-label="Показати фото на весь екран"
+                className="absolute inset-0 size-full"
+              >
+                <Image src={src} alt={name} fill priority={i === (loop ? 1 : 0)} className="object-cover" />
+              </button>
             </div>
           ))
         ) : (
@@ -126,12 +149,15 @@ export function ProductGallery({
         )}
       </div>
 
-      <Link
-        href="/"
-        className="absolute left-3 top-3 flex size-8 items-center justify-center rounded-full bg-background/90 shadow-sm"
-      >
-        <ChevronLeft className="size-4" />
-      </Link>
+      {!inTelegram && (
+        <button
+          onClick={goBack}
+          aria-label="Назад"
+          className="absolute left-3 top-3 flex size-8 items-center justify-center rounded-full bg-background/90 shadow-sm"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+      )}
       <button
         onClick={() => toggleFavorite(productId)}
         aria-label="У обране"
@@ -139,6 +165,12 @@ export function ProductGallery({
       >
         <Heart className={cn("size-4", isFavorite ? "fill-destructive text-destructive" : "text-muted-foreground")} />
       </button>
+
+      {images.length > 1 && (
+        <span className="absolute right-3 bottom-3 rounded-full bg-black/35 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
+          {activeIndex + 1} / {images.length}
+        </span>
+      )}
 
       {images.length > 1 && (
         // Dark pill behind the dots — plain white dots disappear against a light photo otherwise.
@@ -155,6 +187,24 @@ export function ProductGallery({
               className={cn("size-1.5 rounded-full transition-all", i === activeIndex ? "w-4 bg-white" : "bg-white/50")}
             />
           ))}
+        </div>
+      )}
+
+      {fullscreen && activeImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+          onClick={() => setFullscreen(false)}
+        >
+          <button
+            onClick={() => setFullscreen(false)}
+            aria-label="Закрити"
+            className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-full bg-white/10 text-white"
+          >
+            <X className="size-5" />
+          </button>
+          <div className="relative h-[80vh] w-full">
+            <Image src={activeImage} alt={name} fill className="object-contain" />
+          </div>
         </div>
       )}
     </div>
