@@ -12,7 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, EyeOff, Eye, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MoreVertical, EyeOff, Eye, Trash2, Pencil } from "lucide-react";
 import { LogoUploadField, type LogoImage } from "@/components/admin/logo-upload-field";
 import { toast } from "sonner";
 
@@ -23,6 +24,10 @@ export default function AdminBrandsPage() {
   const [name, setName] = useState("");
   const [logo, setLogo] = useState<LogoImage | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<Brand | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editLogo, setEditLogo] = useState<LogoImage | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["admin-brands"],
@@ -89,6 +94,46 @@ export default function AdminBrandsPage() {
     queryClient.invalidateQueries({ queryKey: ["admin-brands"] });
   }
 
+  function openEdit(brand: Brand) {
+    setEditing(brand);
+    setEditName(brand.name);
+    setEditLogo(brand.logo_url ? { url: brand.logo_url } : null);
+  }
+
+  async function saveEdit() {
+    if (!editing || !editName.trim()) return;
+    setEditSubmitting(true);
+    try {
+      let logoUrl = editLogo?.url ?? null;
+      if (editLogo?.file) {
+        const form = new FormData();
+        form.append("files", editLogo.file);
+        const uploadRes = await fetch("/api/admin/upload", { method: "POST", body: form });
+        if (!uploadRes.ok) {
+          const body = await uploadRes.json().catch(() => ({}));
+          toast.error(body.error ?? "Не вдалося завантажити лого");
+          return;
+        }
+        logoUrl = (await uploadRes.json()).urls[0];
+      }
+
+      const res = await fetch(`/api/admin/brands/${editing.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName, logo_url: logoUrl }),
+      });
+      if (!res.ok) {
+        toast.error("Не вдалося зберегти зміни");
+        return;
+      }
+      toast.success("Бренд оновлено");
+      setEditing(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-brands"] });
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">Бренди</h1>
@@ -139,6 +184,9 @@ export default function AdminBrandsPage() {
                       <MoreVertical className="size-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEdit(b)}>
+                        <Pencil /> Редагувати
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => toggleActive(b)}>
                         {b.is_active ? <EyeOff /> : <Eye />}
                         {b.is_active ? "Приховати" : "Активувати"}
@@ -154,6 +202,23 @@ export default function AdminBrandsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Редагувати бренд</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <LogoUploadField value={editLogo} onChange={setEditLogo} />
+            <Input placeholder="Назва" value={editName} onChange={(e) => setEditName(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button onClick={saveEdit} disabled={editSubmitting}>
+              Зберегти
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

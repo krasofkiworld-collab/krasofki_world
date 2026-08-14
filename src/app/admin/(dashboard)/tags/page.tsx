@@ -5,7 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 type Tag = { id: string; name: string; slug: string };
@@ -14,6 +15,9 @@ export default function AdminTagsPage() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<Tag | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["admin-tags-full"],
@@ -50,6 +54,33 @@ export default function AdminTagsPage() {
     queryClient.invalidateQueries({ queryKey: ["admin-tags-full"] });
   }
 
+  function openEdit(tag: Tag) {
+    setEditing(tag);
+    setEditName(tag.name);
+  }
+
+  async function saveEdit() {
+    if (!editing || !editName.trim()) return;
+    setEditSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/tags/${editing.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName }),
+      });
+      if (!res.ok) {
+        toast.error("Не вдалося зберегти зміни");
+        return;
+      }
+      toast.success("Тег оновлено");
+      setEditing(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-tags-full"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-tags"] });
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
   return (
     <div className="flex max-w-lg flex-col gap-4">
       <h1 className="text-2xl font-semibold">Теги</h1>
@@ -68,6 +99,9 @@ export default function AdminTagsPage() {
         {data?.map((t) => (
           <Badge key={t.id} variant="secondary" className="gap-1 pr-1">
             #{t.name}
+            <button onClick={() => openEdit(t)} className="rounded-full p-0.5 hover:bg-muted-foreground/20">
+              <Pencil className="size-3" />
+            </button>
             <button onClick={() => removeTag(t.id)} className="rounded-full p-0.5 hover:bg-muted-foreground/20">
               <X className="size-3" />
             </button>
@@ -75,6 +109,20 @@ export default function AdminTagsPage() {
         ))}
         {!data?.length && <p className="text-sm text-muted-foreground">Тегів ще немає.</p>}
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Редагувати тег</DialogTitle>
+          </DialogHeader>
+          <Input placeholder="Назва" value={editName} onChange={(e) => setEditName(e.target.value)} />
+          <DialogFooter>
+            <Button onClick={saveEdit} disabled={editSubmitting}>
+              Зберегти
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -12,7 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, EyeOff, Eye, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MoreVertical, EyeOff, Eye, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 type Category = { id: string; name: string; slug: string; sort_order: number; is_active: boolean };
@@ -21,6 +22,9 @@ export default function AdminCategoriesPage() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<Category | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["admin-categories-full"],
@@ -72,6 +76,32 @@ export default function AdminCategoriesPage() {
     queryClient.invalidateQueries({ queryKey: ["admin-categories-full"] });
   }
 
+  function openEdit(cat: Category) {
+    setEditing(cat);
+    setEditName(cat.name);
+  }
+
+  async function saveEdit() {
+    if (!editing || !editName.trim()) return;
+    setEditSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/categories/${editing.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editName }),
+      });
+      if (!res.ok) {
+        toast.error("Не вдалося зберегти зміни");
+        return;
+      }
+      toast.success("Категорію оновлено");
+      setEditing(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-categories-full"] });
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">Категорії</h1>
@@ -113,6 +143,9 @@ export default function AdminCategoriesPage() {
                       <MoreVertical className="size-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEdit(c)}>
+                        <Pencil /> Редагувати
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => toggleActive(c)}>
                         {c.is_active ? <EyeOff /> : <Eye />}
                         {c.is_active ? "Приховати" : "Активувати"}
@@ -128,6 +161,20 @@ export default function AdminCategoriesPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Редагувати категорію</DialogTitle>
+          </DialogHeader>
+          <Input placeholder="Назва" value={editName} onChange={(e) => setEditName(e.target.value)} />
+          <DialogFooter>
+            <Button onClick={saveEdit} disabled={editSubmitting}>
+              Зберегти
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
