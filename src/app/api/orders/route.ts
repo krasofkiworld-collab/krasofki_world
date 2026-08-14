@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { createOrderSchema } from "@/lib/validation/order";
 import { identifyCustomer } from "@/lib/telegram/identify-customer";
 import { notifyCustomer, notifyStaff, orderMessages } from "@/lib/telegram/notify";
+import { adjustStock } from "@/lib/stock";
 
 export async function GET(req: NextRequest) {
   const identity = identifyCustomer(req);
@@ -165,6 +166,13 @@ export async function POST(req: NextRequest) {
   if (itemsError) {
     return NextResponse.json({ error: "failed to create order items" }, { status: 500 });
   }
+
+  // Stock was only validated above, never reserved — deduct it now that the
+  // order actually exists, so a second buyer sees the real remaining count.
+  await adjustStock(
+    input.items.map((item) => ({ productId: item.productId, variantId: item.variantId, qty: item.qty })),
+    -1
+  );
 
   // Web guests have no Telegram chat to message — only staff gets pinged for those.
   await Promise.allSettled([

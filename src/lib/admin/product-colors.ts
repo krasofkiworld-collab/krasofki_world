@@ -47,6 +47,13 @@ export async function insertColors(productId: string, colors: ColorInput[]) {
       if (sizesError) throw new Error(sizesError.message);
     }
   }
+
+  // Once a product has colors, its top-level stock_quantity stops being a
+  // manually-typed number and becomes the sum of every size's own stock —
+  // every place that reads products.stock_quantity (catalog card, admin
+  // list, low-stock widget) then stays correct without needing to know
+  // about colors/variants at all.
+  if (colors.length) await syncProductStockFromColors(productId);
 }
 
 /** Replaces all of a product's colors/variants — used on PATCH. */
@@ -55,4 +62,14 @@ export async function replaceColors(productId: string, colors: ColorInput[]) {
   // so removing the colors is enough to clear the old size rows too.
   await supabaseServer.from("product_colors").delete().eq("product_id", productId);
   await insertColors(productId, colors);
+}
+
+/** Recomputes products.stock_quantity as the sum of all its variants' stock. */
+export async function syncProductStockFromColors(productId: string) {
+  const { data: variants } = await supabaseServer
+    .from("product_variants")
+    .select("stock_quantity")
+    .eq("product_id", productId);
+  const total = (variants ?? []).reduce((sum, v) => sum + v.stock_quantity, 0);
+  await supabaseServer.from("products").update({ stock_quantity: total }).eq("id", productId);
 }

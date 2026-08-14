@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { updateOrderSchema, ORDER_STATUS_TRANSITIONS } from "@/lib/validation/order";
 import { notifyCustomer, orderMessages } from "@/lib/telegram/notify";
+import { adjustStock } from "@/lib/stock";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
@@ -51,6 +52,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { error } = await supabaseServer.from("orders").update(parsed.data).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Stock was deducted when the order was placed — put it back if it's
+  // being cancelled instead of fulfilled.
+  if (parsed.data.status === "cancelled" && current.status !== "cancelled") {
+    const { data: items } = await supabaseServer
+      .from("order_items")
+      .select("product_id, variant_id, quantity")
+      .eq("order_id", id);
+    const restockable = (items ?? []).filter((i): i is typeof i & { product_id: string } => !!i.product_id);
+    await adjustStock(
+      restockable.map((i) => ({ productId: i.product_id, variantId: i.variant_id, qty: i.quantity })),
+      1
+    );
+  }
 
   if (parsed.data.status && parsed.data.status !== current.status) {
     const chatId = current.customers?.telegram_user_id;

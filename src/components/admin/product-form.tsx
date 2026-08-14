@@ -80,6 +80,7 @@ export function ProductForm({ productId }: { productId?: string }) {
 
   const selectedTagIds = form.watch("tag_ids") ?? [];
   const watched = form.watch();
+  const colorsTotalStock = colors.reduce((sum, c) => sum + c.sizes.reduce((s, sz) => s + sz.stock_quantity, 0), 0);
 
   useEffect(() => {
     if (!productId) return;
@@ -305,10 +306,19 @@ export function ProductForm({ productId }: { productId?: string }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="stock_quantity">Кількість на складі (без варіантів)</Label>
-          <Input id="stock_quantity" type="number" {...form.register("stock_quantity")} />
-        </div>
+        {colors.length ? (
+          <div className="flex flex-col gap-1.5">
+            <Label>Кількість на складі</Label>
+            <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+              {colorsTotalStock} — рахується автоматично як сума залишків за кольорами й розмірами нижче
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="stock_quantity">Кількість на складі (без варіантів)</Label>
+            <Input id="stock_quantity" type="number" {...form.register("stock_quantity")} />
+          </div>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <Label>Фото товару</Label>
