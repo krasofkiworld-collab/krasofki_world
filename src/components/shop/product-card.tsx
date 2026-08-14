@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Card } from "@/components/ui/card";
+import { Card, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Heart, Copy, ImageOff } from "lucide-react";
 import { formatMoney } from "@/lib/format";
@@ -120,13 +120,15 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="font-bold">{formatMoney(product.price)}</span>
         </div>
       </div>
-      <button
-        onClick={() => setDrawerOpen(true)}
-        disabled={outOfStock || maxedInCart}
-        className="w-full bg-foreground py-3 text-xs font-semibold uppercase tracking-wide text-background disabled:opacity-50"
-      >
-        {outOfStock ? "Немає в наявності" : "Швидка покупка"}
-      </button>
+      <CardFooter className="p-0 border-t-0 bg-transparent">
+        <button
+          onClick={() => setDrawerOpen(true)}
+          disabled={outOfStock || maxedInCart}
+          className="w-full rounded-b-2xl bg-foreground py-3 text-xs font-semibold uppercase tracking-wide text-background disabled:opacity-50"
+        >
+          {outOfStock ? "Немає в наявності" : "Швидка покупка"}
+        </button>
+      </CardFooter>
 
       <AddToCartDrawer product={product} open={drawerOpen} onOpenChange={setDrawerOpen} />
     </Card>
