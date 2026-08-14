@@ -59,7 +59,7 @@ export function ProductDetail({ product }: { product: Product }) {
         {product.brands && (
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{product.brands.name}</p>
         )}
-        <h2 className="text-xl font-semibold">{product.name}</h2>
+        <h2 className="font-heading text-xl font-semibold tracking-tight">{product.name}</h2>
         <div className="mt-1.5 flex items-center gap-2.5">
           <span className="text-lg font-bold">{formatMoney(product.price)}</span>
           {product.compare_at_price && product.compare_at_price > product.price && (

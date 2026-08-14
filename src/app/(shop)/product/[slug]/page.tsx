@@ -27,6 +27,12 @@ export async function generateMetadata({
       images: image ? [{ url: image }] : undefined,
       type: "website",
     },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description,
+      images: image ? [image] : undefined,
+    },
   };
 }
 
@@ -53,9 +59,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     },
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Каталог", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: product.name, item: `${SITE_URL}/product/${slug}` },
+    ],
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <ProductBreadcrumb name={product.name} />
       <ProductDetail product={product} />
     </>
