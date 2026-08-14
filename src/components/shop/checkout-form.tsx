@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Truck, ShieldCheck } from "lucide-react";
 import { useCart, cartTotal } from "@/stores/cart";
 import { formatMoney } from "@/lib/format";
 import { getInitData, withDevUserId, isInTelegram } from "./telegram-init";
@@ -88,6 +89,25 @@ export function CheckoutForm() {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 rounded-lg border p-3">
+        <p className="text-xs font-medium text-muted-foreground">Ваше замовлення</p>
+        {items.map((item) => (
+          <div key={`${item.productId}-${item.variantId ?? ""}`} className="flex items-baseline justify-between gap-2 text-sm">
+            <span className="min-w-0 truncate">
+              {item.name}
+              {item.variantLabel && <span className="text-muted-foreground"> · {item.variantLabel}</span>}
+              <span className="text-muted-foreground"> × {item.qty}</span>
+            </span>
+            <span className="shrink-0 font-medium">{formatMoney(item.price * item.qty)}</span>
+          </div>
+        ))}
+      </div>
+
+      <p className="-mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <ShieldCheck className="size-3.5 shrink-0" />
+        Повернення та обмін протягом 14 днів після отримання.
+      </p>
+
       {!inTelegram && (
         <div className="flex flex-col gap-3 rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">Ваші контактні дані для замовлення</p>
@@ -114,7 +134,12 @@ export function CheckoutForm() {
 
       <div className="flex flex-col gap-1.5">
         <Label>Спосіб доставки</Label>
-        <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">Нова Пошта — відділення</p>
+        <p className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+          <Truck className="size-4 shrink-0 text-muted-foreground" />
+          <span>
+            <b className="font-medium">Нова Пошта</b> — відділення
+          </span>
+        </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
