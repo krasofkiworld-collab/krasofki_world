@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/shop/product-detail";
 import { ProductBreadcrumb } from "@/components/shop/product-breadcrumb";
-import { getCachedProductBySlug } from "@/lib/catalog-cache";
+import { RelatedProducts } from "@/components/shop/related-products";
+import { getCachedProductBySlug, getCachedRelatedProducts } from "@/lib/catalog-cache";
 import { SITE_URL } from "@/lib/site";
 
 export async function generateMetadata({
@@ -42,6 +43,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   if (!product) notFound();
 
+  const relatedProducts = await getCachedRelatedProducts(product.category_id, product.id);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -74,6 +77,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <ProductBreadcrumb name={product.name} />
       <ProductDetail product={product} />
+      <RelatedProducts products={relatedProducts} />
     </>
   );
 }

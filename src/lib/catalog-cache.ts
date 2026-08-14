@@ -66,7 +66,7 @@ export const getCachedProductBySlug = unstable_cache(
     const { data } = await supabase
       .from("products")
       .select(
-        "id, name, description, price, compare_at_price, images, stock_quantity, brands(name), product_tags(tags(name)), product_colors(id, name, hex, image_url, sort_order, product_variants(id, size, stock_quantity, is_active))"
+        "id, slug, name, description, price, compare_at_price, images, stock_quantity, category_id, brands(name), product_tags(tags(name)), product_colors(id, name, hex, image_url, sort_order, product_variants(id, size, stock_quantity, is_active))"
       )
       .eq("slug", slug)
       .eq("is_active", true)
@@ -74,5 +74,27 @@ export const getCachedProductBySlug = unstable_cache(
     return data ?? null;
   },
   ["catalog:product-by-slug"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["catalog:products"] }
+);
+
+// Same-category cross-sell strip on the product detail page. Deliberately
+// simple (category match, newest first) rather than a real recommendation
+// engine — good enough to surface *something* relevant without a
+// behavioral-data pipeline this store doesn't have yet.
+export const getCachedRelatedProducts = unstable_cache(
+  async (categoryId: string | null, excludeProductId: string) => {
+    if (!categoryId) return [];
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("products")
+      .select("id, slug, name, price, compare_at_price, images, stock_quantity, sku, brands(name)")
+      .eq("category_id", categoryId)
+      .eq("is_active", true)
+      .neq("id", excludeProductId)
+      .order("created_at", { ascending: false })
+      .limit(8);
+    return data ?? [];
+  },
+  ["catalog:related-products"],
   { revalidate: REVALIDATE_SECONDS, tags: ["catalog:products"] }
 );

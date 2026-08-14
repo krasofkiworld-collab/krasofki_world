@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatMoney } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { ProductPurchasePanel } from "@/components/shop/product-purchase-panel";
+import { useRecentlyViewed } from "@/stores/recently-viewed";
 
 type Product = {
   id: string;
+  slug: string;
   name: string;
   description: string | null;
   price: number;
@@ -50,6 +52,20 @@ export function ProductDetail({ product }: { product: Product }) {
   );
 
   const [focusUrl, setFocusUrl] = useState<string | null>(null);
+
+  const addRecentlyViewed = useRecentlyViewed((s) => s.add);
+  useEffect(() => {
+    addRecentlyViewed({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      price: product.price,
+      compare_at_price: product.compare_at_price,
+      images: product.images,
+      stock_quantity: product.stock_quantity,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
 
   return (
     <div className="flex flex-col gap-4 pb-4">

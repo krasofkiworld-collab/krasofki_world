@@ -5,6 +5,7 @@ import { BrandFilter } from "@/components/shop/brand-filter";
 import { TagFilter } from "@/components/shop/tag-filter";
 import { SearchAndSort } from "@/components/shop/search-and-sort";
 import { HeroBanner } from "@/components/shop/hero-banner";
+import { RecentlyViewedStrip } from "@/components/shop/recently-viewed-strip";
 import { ShopFooterLinks } from "@/components/shop/shop-footer-links";
 import { PAGE_SIZE } from "@/lib/products-query";
 import { getCachedCategories, getCachedBrands, getCachedTags, getCachedProducts } from "@/lib/catalog-cache";
@@ -36,9 +37,12 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
     getCachedProducts(filters, 0),
   ]);
 
+  const hasActiveFilters = Boolean(filters.category || filters.brand || filters.tag || filters.q);
+
   return (
     <div className="flex flex-col gap-4">
       <HeroBanner storeName="Krosofki World" />
+      {!hasActiveFilters && <RecentlyViewedStrip />}
       <SearchAndSort />
       <CategoryFilter categories={categories} />
       <BrandFilter brands={brands} />
