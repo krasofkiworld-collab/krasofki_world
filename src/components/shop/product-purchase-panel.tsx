@@ -2,13 +2,30 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Minus, Plus, Ruler, Truck, RotateCcw } from "lucide-react";
+import Link from "next/link";
 import { formatMoney } from "@/lib/format";
 import { useCart } from "@/stores/cart";
 import { MAX_QTY_PER_ITEM } from "@/lib/constants";
 import { hapticLight } from "./telegram-init";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+// Generic UA/EU shoe size conversion — not per-model fit guidance (no data
+// source for that yet), but enough to answer "what's my size" at a glance.
+const SIZE_CHART = [
+  { eu: "36", uk: "3.5", us: "5", cm: "23" },
+  { eu: "37", uk: "4.5", us: "6", cm: "23.5" },
+  { eu: "38", uk: "5", us: "6.5", cm: "24" },
+  { eu: "39", uk: "5.5", us: "7", cm: "24.5" },
+  { eu: "40", uk: "6.5", us: "7.5", cm: "25.5" },
+  { eu: "41", uk: "7", us: "8", cm: "26" },
+  { eu: "42", uk: "8", us: "8.5", cm: "26.5" },
+  { eu: "43", uk: "9", us: "9.5", cm: "27.5" },
+  { eu: "44", uk: "9.5", us: "10", cm: "28" },
+  { eu: "45", uk: "10.5", us: "11", cm: "29" },
+];
 
 type SizeVariant = {
   id: string;
@@ -47,6 +64,7 @@ export function ProductPurchasePanel({
   const items = useCart((s) => s.items);
   const add = useCart((s) => s.add);
   const hasColors = colors.length > 0;
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const [selectedColorId, setSelectedColorId] = useState<string | undefined>(colors[0]?.id);
   const selectedColor = colors.find((c) => c.id === selectedColorId);
@@ -154,7 +172,16 @@ export function ProductPurchasePanel({
 
       {sizes.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-medium">Розмір</p>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-medium">Розмір</p>
+            <button
+              onClick={() => setSizeGuideOpen(true)}
+              className="flex items-center gap-1 text-xs text-muted-foreground underline underline-offset-2"
+            >
+              <Ruler className="size-3" />
+              Розмірна сітка
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {sizes.map((v) => (
               <button
@@ -216,6 +243,51 @@ export function ProductPurchasePanel({
               : `Додати · ${formatMoney(product.price * qty)}`}
         </Button>
       </div>
+
+      <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+        <p className="flex items-center gap-1.5">
+          <Truck className="size-3.5 shrink-0" />
+          Доставка Новою поштою, оплата при отриманні
+        </p>
+        <p className="flex items-center gap-1.5">
+          <RotateCcw className="size-3.5 shrink-0" />
+          Повернення та обмін —{" "}
+          <Link href="/terms" className="underline underline-offset-2">
+            умови повернення
+          </Link>
+        </p>
+      </div>
+
+      <Dialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Розмірна сітка</DialogTitle>
+          </DialogHeader>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-left text-xs text-muted-foreground">
+                <th className="pb-1.5 font-medium">EU</th>
+                <th className="pb-1.5 font-medium">UK</th>
+                <th className="pb-1.5 font-medium">US</th>
+                <th className="pb-1.5 font-medium">См</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SIZE_CHART.map((row) => (
+                <tr key={row.eu} className="border-b border-dashed last:border-0">
+                  <td className="py-1.5">{row.eu}</td>
+                  <td className="py-1.5">{row.uk}</td>
+                  <td className="py-1.5">{row.us}</td>
+                  <td className="py-1.5">{row.cm}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-xs text-muted-foreground">
+            Орієнтовна таблиця — розміри можуть незначно відрізнятись залежно від моделі та бренду.
+          </p>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
