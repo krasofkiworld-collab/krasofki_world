@@ -11,7 +11,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }));
 
   return (
-    <ClerkProvider>
+    <ClerkProvider proxyUrl="/__clerk">
       <QueryClientProvider client={queryClient}>
         {children}
         <Toaster />
