@@ -6,6 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical, EyeOff, Eye, Trash2 } from "lucide-react";
 import { LogoUploadField, type LogoImage } from "@/components/admin/logo-upload-field";
 import { toast } from "sonner";
 
@@ -73,6 +80,17 @@ export default function AdminBrandsPage() {
     queryClient.invalidateQueries({ queryKey: ["admin-brands"] });
   }
 
+  async function removeBrand(brand: Brand) {
+    if (!confirm(`Видалити бренд «${brand.name}»?`)) return;
+    const res = await fetch(`/api/admin/brands/${brand.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      toast.error("Не вдалося видалити");
+      return;
+    }
+    toast.success("Бренд видалено");
+    queryClient.invalidateQueries({ queryKey: ["admin-brands"] });
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">Бренди</h1>
@@ -97,11 +115,12 @@ export default function AdminBrandsPage() {
               <TableHead>Назва</TableHead>
               <TableHead>Slug</TableHead>
               <TableHead>Статус</TableHead>
+              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {data?.map((b) => (
-              <TableRow key={b.id} className="cursor-pointer" onClick={() => toggleActive(b)}>
+              <TableRow key={b.id}>
                 <TableCell>
                   {b.logo_url && (
                     // eslint-disable-next-line @next/next/no-img-element -- admin-entered, arbitrary external domain
@@ -114,6 +133,24 @@ export default function AdminBrandsPage() {
                   <Badge variant={b.is_active ? "default" : "secondary"}>
                     {b.is_active ? "Активний" : "Прихований"}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={<Button variant="ghost" size="icon" className="size-8" aria-label="Дії з брендом" />}
+                    >
+                      <MoreVertical className="size-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => toggleActive(b)}>
+                        {b.is_active ? <EyeOff /> : <Eye />}
+                        {b.is_active ? "Приховати" : "Активувати"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" onClick={() => removeBrand(b)}>
+                        <Trash2 /> Видалити
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}

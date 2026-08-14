@@ -6,6 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical, EyeOff, Eye, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Category = { id: string; name: string; slug: string; sort_order: number; is_active: boolean };
@@ -56,6 +63,17 @@ export default function AdminCategoriesPage() {
     queryClient.invalidateQueries({ queryKey: ["admin-categories-full"] });
   }
 
+  async function removeCategory(cat: Category) {
+    if (!confirm(`Видалити категорію «${cat.name}»?`)) return;
+    const res = await fetch(`/api/admin/categories/${cat.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      toast.error("Не вдалося видалити");
+      return;
+    }
+    toast.success("Категорію видалено");
+    queryClient.invalidateQueries({ queryKey: ["admin-categories-full"] });
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">Категорії</h1>
@@ -76,11 +94,12 @@ export default function AdminCategoriesPage() {
               <TableHead>Slug</TableHead>
               <TableHead>Порядок</TableHead>
               <TableHead>Статус</TableHead>
+              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {data?.map((c) => (
-              <TableRow key={c.id} className="cursor-pointer" onClick={() => toggleActive(c)}>
+              <TableRow key={c.id}>
                 <TableCell>{c.name}</TableCell>
                 <TableCell className="text-muted-foreground">{c.slug}</TableCell>
                 <TableCell>{c.sort_order}</TableCell>
@@ -88,6 +107,24 @@ export default function AdminCategoriesPage() {
                   <Badge variant={c.is_active ? "default" : "secondary"}>
                     {c.is_active ? "Активна" : "Прихована"}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={<Button variant="ghost" size="icon" className="size-8" aria-label="Дії з категорією" />}
+                    >
+                      <MoreVertical className="size-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => toggleActive(c)}>
+                        {c.is_active ? <EyeOff /> : <Eye />}
+                        {c.is_active ? "Приховати" : "Активувати"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" onClick={() => removeCategory(c)}>
+                        <Trash2 /> Видалити
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}

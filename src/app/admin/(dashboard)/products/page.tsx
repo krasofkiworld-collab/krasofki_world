@@ -2,13 +2,20 @@
 
 import Link from "next/link";
 import { useRef } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { formatMoney } from "@/lib/format";
-import { Plus } from "lucide-react";
+import { Plus, MoreVertical, Pencil, ExternalLink, EyeOff, Eye, Trash2 } from "lucide-react";
 import { useInfiniteScrollTrigger } from "@/lib/use-infinite-scroll-trigger";
+import { toast } from "sonner";
 
 type Product = {
   id: string;
@@ -22,6 +29,7 @@ type Product = {
 };
 
 export default function AdminProductsPage() {
+  const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLTableRowElement>(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
@@ -38,6 +46,31 @@ export default function AdminProductsPage() {
   useInfiniteScrollTrigger(sentinelRef, hasNextPage, isFetchingNextPage, fetchNextPage);
 
   const products = data?.pages.flatMap((p) => p.products) ?? [];
+
+  async function toggleActive(p: Product) {
+    const res = await fetch(`/api/admin/products/${p.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: !p.is_active }),
+    });
+    if (!res.ok) {
+      toast.error("Не вдалося оновити статус");
+      return;
+    }
+    toast.success(p.is_active ? "Товар приховано" : "Товар активовано");
+    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+  }
+
+  async function removeProduct(p: Product) {
+    if (!confirm(`Видалити «${p.name}»? Товар приховається з каталогу.`)) return;
+    const res = await fetch(`/api/admin/products/${p.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      toast.error("Не вдалося видалити");
+      return;
+    }
+    toast.success("Товар видалено");
+    queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -58,16 +91,17 @@ export default function AdminProductsPage() {
             <TableHead>Ціна</TableHead>
             <TableHead>Залишок</TableHead>
             <TableHead>Статус</TableHead>
+            <TableHead className="w-10" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading && (
             <TableRow>
-              <TableCell colSpan={6}>Завантаження...</TableCell>
+              <TableCell colSpan={7}>Завантаження...</TableCell>
             </TableRow>
           )}
           {products.map((p) => (
-            <TableRow key={p.id} className="cursor-pointer">
+            <TableRow key={p.id}>
               <TableCell>
                 {p.images[0] && (
                   // eslint-disable-next-line @next/next/no-img-element -- small fixed-size thumbnail, not worth Image's overhead here
@@ -89,18 +123,46 @@ export default function AdminProductsPage() {
                   {p.is_active ? "Активний" : "Прихований"}
                 </Badge>
               </TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button variant="ghost" size="icon" className="size-8" aria-label="Дії з товаром" />
+                    }
+                  >
+                    <MoreVertical className="size-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem render={<Link href={`/admin/products/${p.id}`} />}>
+                      <Pencil /> Редагувати
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      render={<a href={`/product/${p.slug}`} target="_blank" rel="noreferrer" />}
+                    >
+                      <ExternalLink /> Переглянути на сайті
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => toggleActive(p)}>
+                      {p.is_active ? <EyeOff /> : <Eye />}
+                      {p.is_active ? "Приховати" : "Активувати"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" onClick={() => removeProduct(p)}>
+                      <Trash2 /> Видалити
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
             </TableRow>
           ))}
           {!isLoading && !products.length && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
+              <TableCell colSpan={7} className="text-center text-muted-foreground">
                 Товарів ще немає.
               </TableCell>
             </TableRow>
           )}
           {hasNextPage && (
             <TableRow ref={sentinelRef}>
-              <TableCell colSpan={6} className="text-center text-xs text-muted-foreground">
+              <TableCell colSpan={7} className="text-center text-xs text-muted-foreground">
                 {isFetchingNextPage ? "Завантаження ще…" : ""}
               </TableCell>
             </TableRow>
