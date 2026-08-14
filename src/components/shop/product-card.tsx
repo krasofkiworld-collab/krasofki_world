@@ -100,7 +100,7 @@ export function ProductCard({ product }: { product: Product }) {
           )
         )}
       </div>
-      <div className="flex flex-col gap-1.5 p-3 pb-0">
+      <div className="flex flex-1 flex-col gap-1.5 p-3 pb-0">
         {product.brands && (
           <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{product.brands.name}</p>
         )}
@@ -113,7 +113,7 @@ export function ProductCard({ product }: { product: Product }) {
             <Copy className="size-3" />
           </button>
         )}
-        <div className="flex items-baseline gap-2 pb-3">
+        <div className="mt-auto flex items-baseline gap-2 pb-3">
           {product.compare_at_price && product.compare_at_price > product.price && (
             <span className="text-sm text-orange-500 line-through">{formatMoney(product.compare_at_price)}</span>
           )}
