@@ -4,7 +4,13 @@ import { useRef } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ProductCard } from "./product-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { useInfiniteScrollTrigger } from "@/lib/use-infinite-scroll-trigger";
+
+// Auto-load only the first few pages — past that, require an explicit tap.
+// Unbounded auto-load makes the footer/other links progressively harder to
+// reach and degrades keyboard/screen-reader navigation on long sessions.
+const AUTO_LOAD_PAGES = 3;
 
 type Product = {
   id: string;
@@ -48,7 +54,10 @@ export function ProductGrid({ initialProducts, hasMore: initialHasMore, filters 
     initialData: { pages: [{ products: initialProducts, hasMore: initialHasMore }], pageParams: [0] },
   });
 
-  useInfiniteScrollTrigger(sentinelRef, hasNextPage, isFetchingNextPage, fetchNextPage);
+  const pagesLoaded = data?.pages.length ?? 1;
+  const autoLoadEnabled = pagesLoaded < AUTO_LOAD_PAGES;
+
+  useInfiniteScrollTrigger(sentinelRef, hasNextPage && autoLoadEnabled, isFetchingNextPage, fetchNextPage);
 
   const products = data?.pages.flatMap((p) => p.products) ?? initialProducts;
 
@@ -58,18 +67,23 @@ export function ProductGrid({ initialProducts, hasMore: initialHasMore, filters 
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
       </div>
-      {hasNextPage && (
+      {hasNextPage && autoLoadEnabled && (
         // min-h: a 0-height sentinel is an unreliable IntersectionObserver
         // target in some environments (see use-infinite-scroll-trigger.ts).
-        <div ref={sentinelRef} className="grid min-h-24 grid-cols-2 gap-3">
+        <div ref={sentinelRef} className="grid min-h-24 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {isFetchingNextPage &&
             [...Array(2)].map((_, i) => <Skeleton key={i} className="aspect-[3/4] w-full rounded-2xl" />)}
         </div>
+      )}
+      {hasNextPage && !autoLoadEnabled && (
+        <Button variant="outline" className="w-full" disabled={isFetchingNextPage} onClick={() => fetchNextPage()}>
+          {isFetchingNextPage ? "Завантаження..." : "Завантажити ще"}
+        </Button>
       )}
     </div>
   );
