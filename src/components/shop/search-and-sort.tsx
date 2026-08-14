@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 
 const SORT_LABELS: Record<string, string> = {
   default: "Новинки",
@@ -17,7 +17,7 @@ export function SearchAndSort() {
   const router = useRouter();
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -40,13 +40,27 @@ export function SearchAndSort() {
   return (
     <div className="flex gap-2">
       <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        {isPending ? (
+          <Loader2 className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+        ) : (
+          <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        )}
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Пошук товарів..."
-          className="pl-8"
+          className="pl-8 pr-8"
         />
+        {q && (
+          <button
+            type="button"
+            onClick={() => setQ("")}
+            aria-label="Очистити пошук"
+            className="absolute right-2.5 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-4" />
+          </button>
+        )}
       </div>
       <Select defaultValue={params.get("sort") ?? "default"} onValueChange={setSort}>
         <SelectTrigger className="w-[130px]">
