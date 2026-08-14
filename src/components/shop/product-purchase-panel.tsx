@@ -117,27 +117,36 @@ export function ProductPurchasePanel({
     <div className="flex flex-col gap-4">
       {colors.length > 0 && (
         <div>
-          <p className="mb-2 text-sm font-medium">
-            Колір{selectedColor ? <span className="font-normal text-muted-foreground"> · {selectedColor.name}</span> : null}
-          </p>
-          <div className="flex flex-wrap gap-2">
+          <p className="mb-2 text-sm font-medium">Колір</p>
+          <div className="flex flex-wrap gap-3">
             {colors.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setSelectedColorId(c.id)}
-                aria-label={c.name}
-                title={c.name}
-                className={cn(
-                  "size-8 rounded-full",
-                  // Selected: ring sits offset from the fill by a visible gap
-                  // (ring-offset), so it reads as "this one" instead of just
-                  // a thicker edge that blends into the color itself.
-                  selectedColorId === c.id
-                    ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
-                    : "ring-1 ring-border"
-                )}
-                style={{ backgroundColor: c.hex ?? "#ccc" }}
-              />
+                className="flex flex-col items-center gap-1"
+              >
+                <span
+                  aria-label={c.name}
+                  className={cn(
+                    "size-8 rounded-full",
+                    // Selected: ring sits offset from the fill by a visible gap
+                    // (ring-offset), so it reads as "this one" instead of just
+                    // a thicker edge that blends into the color itself.
+                    selectedColorId === c.id
+                      ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+                      : "ring-1 ring-border"
+                  )}
+                  style={{ backgroundColor: c.hex ?? "#ccc" }}
+                />
+                <span
+                  className={cn(
+                    "max-w-14 truncate text-[11px]",
+                    selectedColorId === c.id ? "font-medium text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {c.name}
+                </span>
+              </button>
             ))}
           </div>
         </div>
@@ -153,12 +162,22 @@ export function ProductPurchasePanel({
                 onClick={() => setSelectedSize(v.size)}
                 disabled={v.stock_quantity <= 0}
                 className={cn(
-                  "flex size-10 items-center justify-center rounded-lg border text-sm",
+                  "relative flex size-10 items-center justify-center rounded-lg border text-sm",
                   selectedSize === v.size ? "border-primary bg-primary text-primary-foreground" : "border-border",
                   v.stock_quantity <= 0 && "opacity-40"
                 )}
               >
                 {v.size}
+                {v.stock_quantity > 0 && v.stock_quantity <= 3 && (
+                  <span
+                    className={cn(
+                      "absolute -top-1.5 -right-1.5 rounded-full px-1 text-[9px] leading-[14px]",
+                      selectedSize === v.size ? "bg-destructive text-white" : "bg-destructive/90 text-white"
+                    )}
+                  >
+                    {v.stock_quantity}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -171,6 +190,7 @@ export function ProductPurchasePanel({
             size="icon"
             variant="outline"
             className="size-8"
+            aria-label="Зменшити кількість"
             disabled={availableToAdd <= 0 || qty <= 1}
             onClick={() => setQty((q) => Math.max(1, q - 1))}
           >
@@ -181,6 +201,7 @@ export function ProductPurchasePanel({
             size="icon"
             variant="outline"
             className="size-8"
+            aria-label="Збільшити кількість"
             disabled={qty >= availableToAdd}
             onClick={() => setQty((q) => Math.min(availableToAdd, q + 1))}
           >

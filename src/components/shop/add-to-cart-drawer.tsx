@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus } from "lucide-react";
 import { formatMoney } from "@/lib/format";
@@ -127,48 +127,70 @@ export function AddToCartDrawer({
         </SheetHeader>
 
         <div className="flex flex-col gap-4 px-4">
-          {isLoading && <p className="text-sm text-muted-foreground">Завантаження...</p>}
+          {isLoading && (
+            <div className="flex flex-col gap-4">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          )}
 
           {!isLoading && hasColors && (
             <>
               <div>
-                <p className="mb-2 text-sm font-medium">
-                  Колір{selectedColor ? <span className="font-normal text-muted-foreground"> · {selectedColor.name}</span> : null}
-                </p>
-                <div className="flex flex-wrap gap-2">
+                <p className="mb-2 text-sm font-medium">Колір</p>
+                <div className="flex flex-wrap gap-3">
                   {colors.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => setSelectedColorId(c.id)}
-                      aria-label={c.name}
-                      title={c.name}
-                      className={cn(
-                        "size-8 rounded-full",
-                        selectedColorId === c.id
-                          ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
-                          : "ring-1 ring-border"
-                      )}
-                      style={{ backgroundColor: c.hex ?? "#ccc" }}
-                    />
+                      className="flex flex-col items-center gap-1"
+                    >
+                      <span
+                        aria-label={c.name}
+                        className={cn(
+                          "size-8 rounded-full",
+                          selectedColorId === c.id
+                            ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+                            : "ring-1 ring-border"
+                        )}
+                        style={{ backgroundColor: c.hex ?? "#ccc" }}
+                      />
+                      <span
+                        className={cn(
+                          "max-w-14 truncate text-[11px]",
+                          selectedColorId === c.id ? "font-medium text-foreground" : "text-muted-foreground"
+                        )}
+                      >
+                        {c.name}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
 
               <div>
                 <p className="mb-2 text-sm font-medium">Розмір</p>
-                <Select value={selectedSize} onValueChange={(v) => v && setSelectedSize(v)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Оберіть розмір">{(value: string) => value}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sizes.map((v) => (
-                      <SelectItem key={v.id} value={v.size} disabled={v.stock_quantity <= 0}>
-                        {v.size}
-                        {v.stock_quantity <= 0 ? " — немає в наявності" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-wrap gap-2">
+                  {sizes.map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={() => setSelectedSize(v.size)}
+                      disabled={v.stock_quantity <= 0}
+                      className={cn(
+                        "relative flex size-10 items-center justify-center rounded-lg border text-sm",
+                        selectedSize === v.size ? "border-primary bg-primary text-primary-foreground" : "border-border",
+                        v.stock_quantity <= 0 && "opacity-40"
+                      )}
+                    >
+                      {v.size}
+                      {v.stock_quantity > 0 && v.stock_quantity <= 3 && (
+                        <span className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive/90 px-1 text-[9px] leading-[14px] text-white">
+                          {v.stock_quantity}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -180,6 +202,7 @@ export function AddToCartDrawer({
                   size="icon"
                   variant="outline"
                   className="size-8"
+                  aria-label="Зменшити кількість"
                   disabled={availableToAdd <= 0 || qty <= 1}
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
                 >
@@ -190,6 +213,7 @@ export function AddToCartDrawer({
                   size="icon"
                   variant="outline"
                   className="size-8"
+                  aria-label="Збільшити кількість"
                   disabled={qty >= availableToAdd}
                   onClick={() => setQty((q) => Math.min(availableToAdd, q + 1))}
                 >
