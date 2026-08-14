@@ -13,7 +13,6 @@ type Tag = { id: string; name: string; slug: string };
 export default function AdminTagsPage() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const { data } = useQuery({
@@ -26,20 +25,19 @@ export default function AdminTagsPage() {
   });
 
   async function addTag() {
-    if (!name.trim() || !slug.trim()) return;
+    if (!name.trim()) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/admin/tags", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug }),
+        body: JSON.stringify({ name }),
       });
       if (!res.ok) {
         toast.error("Не вдалося створити тег");
         return;
       }
       setName("");
-      setSlug("");
       queryClient.invalidateQueries({ queryKey: ["admin-tags-full"] });
       queryClient.invalidateQueries({ queryKey: ["admin-tags"] });
     } finally {
@@ -61,7 +59,6 @@ export default function AdminTagsPage() {
 
       <div className="flex gap-2">
         <Input placeholder="Назва" value={name} onChange={(e) => setName(e.target.value)} />
-        <Input placeholder="slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
         <Button onClick={addTag} disabled={submitting}>
           Додати
         </Button>

@@ -20,7 +20,6 @@ type Category = { id: string; name: string; slug: string; sort_order: number; is
 export default function AdminCategoriesPage() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const { data } = useQuery({
@@ -33,20 +32,19 @@ export default function AdminCategoriesPage() {
   });
 
   async function addCategory() {
-    if (!name.trim() || !slug.trim()) return;
+    if (!name.trim()) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/admin/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, sort_order: (data?.length ?? 0) + 1 }),
+        body: JSON.stringify({ name, sort_order: (data?.length ?? 0) + 1 }),
       });
       if (!res.ok) {
         toast.error("Не вдалося створити категорію");
         return;
       }
       setName("");
-      setSlug("");
       queryClient.invalidateQueries({ queryKey: ["admin-categories-full"] });
       queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     } finally {
@@ -80,7 +78,6 @@ export default function AdminCategoriesPage() {
 
       <div className="flex max-w-md gap-2">
         <Input placeholder="Назва" value={name} onChange={(e) => setName(e.target.value)} />
-        <Input placeholder="slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
         <Button onClick={addCategory} disabled={submitting}>
           Додати
         </Button>

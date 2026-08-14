@@ -21,7 +21,6 @@ import { CatalogGridPreview, ProductDetailPreview } from "./product-preview";
 
 const formSchema = z.object({
   name: z.string().min(1, "Вкажіть назву"),
-  slug: z.string().min(1, "Вкажіть slug"),
   description: z.string().optional(),
   price: z.coerce.number().min(0),
   compare_at_price: z.coerce.number().min(0).optional(),
@@ -89,7 +88,6 @@ export function ProductForm({ productId }: { productId?: string }) {
       .then((p) => {
         form.reset({
           name: p.name,
-          slug: p.slug,
           description: p.description ?? "",
           price: p.price,
           compare_at_price: p.compare_at_price ?? undefined,
@@ -224,11 +222,6 @@ export function ProductForm({ productId }: { productId?: string }) {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="name">Назва</Label>
           <Input id="name" {...form.register("name")} />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="slug">Slug</Label>
-          <Input id="slug" {...form.register("slug")} placeholder="air-classic-white" />
         </div>
 
         <div className="grid grid-cols-2 gap-4">

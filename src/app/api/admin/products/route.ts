@@ -3,11 +3,11 @@ import { revalidateTag } from "next/cache";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { colorSchema, insertColors } from "@/lib/admin/product-colors";
+import { generateUniqueSlug } from "@/lib/slug";
 import { z } from "zod";
 
 const productSchema = z.object({
   name: z.string().min(1),
-  slug: z.string().min(1),
   description: z.string().optional().nullable(),
   price: z.number().min(0),
   compare_at_price: z.number().min(0).optional().nullable(),
@@ -62,8 +62,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
   }
   const { tag_ids, colors, ...productData } = parsed.data;
+  const slug = await generateUniqueSlug("products", productData.name);
 
-  const { data: product, error } = await supabaseServer.from("products").insert(productData).select("id").single();
+  const { data: product, error } = await supabaseServer
+    .from("products")
+    .insert({ ...productData, slug })
+    .select("id")
+    .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   if (tag_ids.length) {

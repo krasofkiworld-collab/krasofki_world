@@ -21,7 +21,6 @@ type Brand = { id: string; name: string; slug: string; logo_url: string | null; 
 export default function AdminBrandsPage() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
   const [logo, setLogo] = useState<LogoImage | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,7 +34,7 @@ export default function AdminBrandsPage() {
   });
 
   async function addBrand() {
-    if (!name.trim() || !slug.trim()) return;
+    if (!name.trim()) return;
     setSubmitting(true);
     try {
       // Same rule as product photos: nothing hits Supabase Storage until
@@ -56,14 +55,13 @@ export default function AdminBrandsPage() {
       const res = await fetch("/api/admin/brands", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, logo_url: logoUrl, sort_order: (data?.length ?? 0) + 1 }),
+        body: JSON.stringify({ name, logo_url: logoUrl, sort_order: (data?.length ?? 0) + 1 }),
       });
       if (!res.ok) {
         toast.error("Не вдалося створити бренд");
         return;
       }
       setName("");
-      setSlug("");
       setLogo(null);
       queryClient.invalidateQueries({ queryKey: ["admin-brands"] });
     } finally {
@@ -101,7 +99,6 @@ export default function AdminBrandsPage() {
       <div className="flex max-w-2xl items-center gap-2">
         <LogoUploadField value={logo} onChange={setLogo} />
         <Input placeholder="Назва" value={name} onChange={(e) => setName(e.target.value)} />
-        <Input placeholder="slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
         <Button onClick={addBrand} disabled={submitting}>
           Додати
         </Button>
