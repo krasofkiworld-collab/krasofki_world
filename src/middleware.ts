@@ -57,7 +57,7 @@ export default clerkMiddleware(async (auth, req) => {
   return NextResponse.next({ request: { headers } });
 }, {
   frontendApiProxy: {
-    enabled: true,
+    enabled: process.env.NEXT_PUBLIC_CLERK_PROXY_ENABLED === "true",
   },
 });
 

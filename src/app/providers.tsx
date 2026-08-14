@@ -11,7 +11,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }));
 
   return (
-    <ClerkProvider proxyUrl="/__clerk">
+    <ClerkProvider proxyUrl={process.env.NEXT_PUBLIC_CLERK_PROXY_ENABLED === "true" ? "/__clerk" : undefined}>
       <QueryClientProvider client={queryClient}>
         {children}
         <Toaster />
