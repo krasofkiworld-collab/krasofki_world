@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 
 export const PRODUCT_FIELDS =
-  "id, slug, name, price, compare_at_price, images, stock_quantity, category_id, brand_id";
+  "id, slug, name, price, compare_at_price, images, stock_quantity, category_id, brand_id, sku";
 export const PAGE_SIZE = 24;
 
 export type ProductFilters = {

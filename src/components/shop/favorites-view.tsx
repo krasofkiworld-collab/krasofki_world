@@ -18,7 +18,7 @@ export function FavoritesView() {
       const supabase = createClient();
       const { data } = await supabase
         .from("products")
-        .select("id, slug, name, price, compare_at_price, images, stock_quantity, brands(name)")
+        .select("id, slug, name, price, compare_at_price, images, stock_quantity, sku, brands(name)")
         .in("id", productIds)
         .eq("is_active", true);
       return data ?? [];

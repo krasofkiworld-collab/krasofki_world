@@ -4,15 +4,15 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Heart } from "lucide-react";
+import { Plus, Heart, Copy } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { useCart } from "@/stores/cart";
 import { useFavorites } from "@/stores/favorites";
 import { MAX_QTY_PER_ITEM } from "@/lib/constants";
 import { AddToCartDrawer } from "./add-to-cart-drawer";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type Product = {
   id: string;
@@ -22,6 +22,7 @@ type Product = {
   compare_at_price: number | null;
   images: string[];
   stock_quantity: number;
+  sku?: string | null;
   brands?: { name: string } | null;
 };
 
@@ -44,9 +45,15 @@ export function ProductCard({ product }: { product: Product }) {
     ? Math.round((1 - product.price / product.compare_at_price) * 100)
     : 0;
 
+  function copySku() {
+    if (!product.sku) return;
+    navigator.clipboard.writeText(product.sku);
+    toast.success("Код товару скопійовано");
+  }
+
   return (
     <Card className="overflow-hidden py-0 gap-0 rounded-2xl">
-      <div className="relative aspect-square bg-muted">
+      <div className="relative aspect-square bg-white">
         <Link href={`/product/${product.slug}`} className="block size-full">
           {product.images[0] && (
             <Image
@@ -54,10 +61,20 @@ export function ProductCard({ product }: { product: Product }) {
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, 300px"
-              className="object-cover"
+              className="object-contain p-6"
             />
           )}
         </Link>
+        <button
+          onClick={() => setDrawerOpen(true)}
+          disabled={outOfStock || maxedInCart}
+          className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-background/90 py-1 pl-1 pr-2.5 text-xs shadow-sm disabled:opacity-50"
+        >
+          <span className="flex size-5 items-center justify-center rounded-full border border-foreground/30">
+            <Plus className="size-3" />
+          </span>
+          Додати
+        </button>
         <button
           onClick={() => toggleFavorite(product.id)}
           className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-background/90 shadow-sm"
@@ -66,43 +83,43 @@ export function ProductCard({ product }: { product: Product }) {
           <Heart className={cn("size-3.5", isFavorite ? "fill-destructive text-destructive" : "text-muted-foreground")} />
         </button>
         {outOfStock ? (
-          <Badge variant="secondary" className="absolute left-2 top-2">
+          <Badge variant="secondary" className="absolute left-2 bottom-2">
             Немає
           </Badge>
         ) : (
           discountPct > 0 && (
-            <Badge className="absolute left-2 top-2 bg-destructive text-white hover:bg-destructive">
+            <Badge className="absolute left-2 bottom-2 bg-destructive text-white hover:bg-destructive">
               -{discountPct}%
             </Badge>
           )
         )}
       </div>
-      <div className="flex items-start justify-between gap-2 p-3">
-        <div className="min-w-0">
-          {product.brands && (
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{product.brands.name}</p>
+      <div className="flex flex-col gap-1.5 p-3">
+        {product.brands && (
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{product.brands.name}</p>
+        )}
+        <Link href={`/product/${product.slug}`} className="line-clamp-2 text-sm font-bold uppercase leading-tight">
+          {product.name}
+        </Link>
+        {product.sku && (
+          <button onClick={copySku} className="flex w-fit items-center gap-1 text-xs text-muted-foreground">
+            Код товару: {product.sku}
+            <Copy className="size-3" />
+          </button>
+        )}
+        <div className="flex items-baseline gap-2">
+          {product.compare_at_price && product.compare_at_price > product.price && (
+            <span className="text-sm text-orange-500 line-through">{formatMoney(product.compare_at_price)}</span>
           )}
-          <Link href={`/product/${product.slug}`} className="line-clamp-2 text-sm font-medium">
-            {product.name}
-          </Link>
-          <div className="mt-1 flex flex-col">
-            {product.compare_at_price && product.compare_at_price > product.price && (
-              <span className="text-xs text-muted-foreground/70 line-through">
-                {formatMoney(product.compare_at_price)}
-              </span>
-            )}
-            <span className="font-semibold">{formatMoney(product.price)}</span>
-          </div>
+          <span className="font-bold">{formatMoney(product.price)}</span>
         </div>
-        <Button
-          size="icon"
-          variant="secondary"
-          className="rounded-full"
-          disabled={outOfStock || maxedInCart}
+        <button
           onClick={() => setDrawerOpen(true)}
+          disabled={outOfStock || maxedInCart}
+          className="mt-1 w-full rounded-lg bg-foreground py-2.5 text-xs font-semibold uppercase tracking-wide text-background disabled:opacity-50"
         >
-          <Plus className="size-4" />
-        </Button>
+          {outOfStock ? "Немає в наявності" : "Швидка покупка"}
+        </button>
       </div>
 
       <AddToCartDrawer product={product} open={drawerOpen} onOpenChange={setDrawerOpen} />
