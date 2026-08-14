@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Heart, Copy } from "lucide-react";
+import { Plus, Heart, Copy, ImageOff } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { useCart } from "@/stores/cart";
 import { useFavorites } from "@/stores/favorites";
@@ -29,6 +29,7 @@ type Product = {
 export function ProductCard({ product }: { product: Product }) {
   const items = useCart((s) => s.items);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const isFavorite = useFavorites((s) => s.isFavorite(product.id));
   const toggleFavorite = useFavorites((s) => s.toggle);
   const outOfStock = product.stock_quantity <= 0;
@@ -55,14 +56,19 @@ export function ProductCard({ product }: { product: Product }) {
     <Card className="overflow-hidden py-0 gap-0 rounded-2xl">
       <div className="relative aspect-square bg-white">
         <Link href={`/product/${product.slug}`} className="block size-full">
-          {product.images[0] && (
+          {product.images[0] && !imgError ? (
             <Image
               src={product.images[0]}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, 300px"
               className="object-contain p-6"
+              onError={() => setImgError(true)}
             />
+          ) : (
+            <div className="flex size-full items-center justify-center">
+              <ImageOff className="size-6 text-muted-foreground" />
+            </div>
           )}
         </Link>
         <button
@@ -94,7 +100,7 @@ export function ProductCard({ product }: { product: Product }) {
           )
         )}
       </div>
-      <div className="flex flex-col gap-1.5 p-3">
+      <div className="flex flex-col gap-1.5 p-3 pb-0">
         {product.brands && (
           <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{product.brands.name}</p>
         )}
@@ -107,20 +113,20 @@ export function ProductCard({ product }: { product: Product }) {
             <Copy className="size-3" />
           </button>
         )}
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-2 pb-3">
           {product.compare_at_price && product.compare_at_price > product.price && (
             <span className="text-sm text-orange-500 line-through">{formatMoney(product.compare_at_price)}</span>
           )}
           <span className="font-bold">{formatMoney(product.price)}</span>
         </div>
-        <button
-          onClick={() => setDrawerOpen(true)}
-          disabled={outOfStock || maxedInCart}
-          className="mt-1 w-full rounded-lg bg-foreground py-2.5 text-xs font-semibold uppercase tracking-wide text-background disabled:opacity-50"
-        >
-          {outOfStock ? "Немає в наявності" : "Швидка покупка"}
-        </button>
       </div>
+      <button
+        onClick={() => setDrawerOpen(true)}
+        disabled={outOfStock || maxedInCart}
+        className="w-full bg-foreground py-3 text-xs font-semibold uppercase tracking-wide text-background disabled:opacity-50"
+      >
+        {outOfStock ? "Немає в наявності" : "Швидка покупка"}
+      </button>
 
       <AddToCartDrawer product={product} open={drawerOpen} onOpenChange={setDrawerOpen} />
     </Card>
