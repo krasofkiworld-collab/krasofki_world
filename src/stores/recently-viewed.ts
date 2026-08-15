@@ -1,34 +1,26 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type RecentlyViewedProduct = {
-  id: string;
-  slug: string;
-  name: string;
-  price: number;
-  compare_at_price: number | null;
-  images: string[];
-  // Snapshot at view-time — may drift from live stock, same tradeoff every
-  // "recently viewed" widget makes rather than re-fetching on every render.
-  stock_quantity: number;
-};
-
 const MAX_ITEMS = 12;
 
 type RecentlyViewedState = {
-  items: RecentlyViewedProduct[];
-  add: (product: RecentlyViewedProduct) => void;
+  productIds: string[];
+  add: (productId: string) => void;
 };
 
+// Stores IDs only, not a data snapshot — mirrors the favorites store. A
+// snapshot would go stale the moment an admin edits the product (name,
+// price, photo), which is exactly what happened here: photos added after
+// the fact never showed up in already-saved "recently viewed" entries.
 export const useRecentlyViewed = create<RecentlyViewedState>()(
   persist(
     (set) => ({
-      items: [],
-      add: (product) =>
+      productIds: [],
+      add: (productId) =>
         set((state) => ({
           // Newest first, deduped, capped — a re-view of the same product
           // just bumps it back to the front instead of duplicating.
-          items: [product, ...state.items.filter((p) => p.id !== product.id)].slice(0, MAX_ITEMS),
+          productIds: [productId, ...state.productIds.filter((id) => id !== productId)].slice(0, MAX_ITEMS),
         })),
     }),
     // Same skipHydration reasoning as favorites/cart — see store-hydrator.tsx.

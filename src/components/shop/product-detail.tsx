@@ -55,15 +55,7 @@ export function ProductDetail({ product }: { product: Product }) {
 
   const addRecentlyViewed = useRecentlyViewed((s) => s.add);
   useEffect(() => {
-    addRecentlyViewed({
-      id: product.id,
-      slug: product.slug,
-      name: product.name,
-      price: product.price,
-      compare_at_price: product.compare_at_price,
-      images: product.images,
-      stock_quantity: product.stock_quantity,
-    });
+    addRecentlyViewed(product.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
 
