@@ -9,6 +9,9 @@ declare global {
       WebApp: {
         ready: () => void;
         expand: () => void;
+        requestFullscreen?: () => void;
+        disableVerticalSwipes?: () => void;
+        isVersionAtLeast: (version: string) => boolean;
         colorScheme: "light" | "dark";
         themeParams: { bg_color?: string };
         setHeaderColor: (color: string) => void;
@@ -31,6 +34,16 @@ function initTelegramWebApp() {
   if (!tg) return;
   tg.ready();
   tg.expand();
+  // requestFullscreen (Bot API 8.0+) goes further than expand() — it removes
+  // the remaining chrome/inset instead of just growing to the normal max
+  // height. disableVerticalSwipes (7.7+) stops Telegram's own swipe-down-to-
+  // close gesture from firing when the user scrolls to the top of the page
+  // and the resulting overscroll bounce reads as "pull to dismiss".
+  // Both methods exist on the WebApp object even on old clients but *throw*
+  // (WebAppMethodUnsupported) instead of being undefined, so a `?.()` call
+  // alone isn't enough — isVersionAtLeast has to gate them first.
+  if (tg.isVersionAtLeast("8.0")) tg.requestFullscreen?.();
+  if (tg.isVersionAtLeast("7.7")) tg.disableVerticalSwipes?.();
   document.documentElement.dataset.theme = tg.colorScheme;
   if (tg.themeParams.bg_color) tg.setHeaderColor(tg.themeParams.bg_color);
 }

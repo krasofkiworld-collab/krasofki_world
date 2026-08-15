@@ -123,6 +123,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Belt-and-suspenders alongside disableVerticalSwipes() in telegram-init.tsx:
+       that API needs Bot API 7.7+, so older Telegram clients still get the
+       native rubber-band bounce at the top of the page, which Telegram then
+       reads as a swipe-to-close gesture. Killing the bounce in CSS closes
+       that gap regardless of client version. */
+    overscroll-behavior-y: none;
   }
   html {
     @apply font-sans;
