@@ -1,6 +1,7 @@
 import "server-only";
 import { bot } from "./bot";
 import { supabaseServer } from "@/lib/supabase/server";
+import { formatMoney } from "@/lib/format";
 import type { Database } from "@/lib/supabase/database.types";
 
 type NotificationRecipient = Database["public"]["Enums"]["notification_recipient"];
@@ -44,11 +45,21 @@ export async function notifyStaff(orderId: string, message: string) {
   await Promise.allSettled((staff ?? []).map((s) => sendAndLog(orderId, "owner", s.chat_id, message)));
 }
 
+type OrderItemLine = { product_name: string; variant_name: string | null; quantity: number; line_total: number };
+
+// Bulleted "name (variant) × qty — price" per line, e.g.:
+//   • Nike P-6000 Anthracite Chrome (42 / Основний) × 1 — 2 899 грн
+function formatItemLines(items: OrderItemLine[]) {
+  return items
+    .map((i) => `• ${i.product_name}${i.variant_name ? ` (${i.variant_name})` : ""} × ${i.quantity} — ${formatMoney(i.line_total)}`)
+    .join("\n");
+}
+
 export const orderMessages = {
-  created: (orderNumber: string, total: number) =>
-    `✅ Замовлення ${orderNumber} прийнято!\nСума: ${total} грн.\n\nНезабаром з вами зв'яжеться менеджер для підтвердження 🙌`,
-  createdForStaff: (orderNumber: string, total: number, username?: string | null) =>
-    `🆕 Нове замовлення ${orderNumber} на ${total} грн${username ? ` від @${username}` : ""}.`,
+  created: (orderNumber: string, total: number, items: OrderItemLine[]) =>
+    `✅ Замовлення ${orderNumber} прийнято!\n\n${formatItemLines(items)}\n\nСума: ${formatMoney(total)}.\n\nНезабаром з вами зв'яжеться менеджер для підтвердження 🙌`,
+  createdForStaff: (orderNumber: string, total: number, items: OrderItemLine[], username?: string | null) =>
+    `🆕 Нове замовлення ${orderNumber}${username ? ` від @${username}` : ""}\n\n${formatItemLines(items)}\n\nСума: ${formatMoney(total)}`,
   confirmed: (orderNumber: string) =>
     `📦 Замовлення ${orderNumber} підтверджено!\nПакуємо та готуємо до відправки — тримаємо в курсі 👌`,
   shipped: (orderNumber: string, ttn?: string | null) =>

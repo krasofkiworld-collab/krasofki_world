@@ -179,11 +179,16 @@ export async function POST(req: NextRequest) {
   // Web guests have no Telegram chat to message — only staff gets pinged for those.
   await Promise.allSettled([
     identity.source === "telegram"
-      ? notifyCustomer(order.id, identity.telegramUserId, orderMessages.created(order.order_number, subtotal))
+      ? notifyCustomer(order.id, identity.telegramUserId, orderMessages.created(order.order_number, subtotal, orderItems))
       : Promise.resolve(),
     notifyStaff(
       order.id,
-      orderMessages.createdForStaff(order.order_number, subtotal, identity.source === "telegram" ? identity.username : undefined)
+      orderMessages.createdForStaff(
+        order.order_number,
+        subtotal,
+        orderItems,
+        identity.source === "telegram" ? identity.username : undefined
+      )
     ),
   ]);
 
