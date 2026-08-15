@@ -149,7 +149,7 @@ export function OrderDetailView({ id }: { id: string }) {
           {order.delivery_address.branch ? `, відділення ${order.delivery_address.branch}` : ""}
           {order.delivery_address.street ? `, ${order.delivery_address.street}` : ""}
         </p>
-        <p>Оплата: при отриманні</p>
+        <p>Оплата: при отриманні або передоплата</p>
       </div>
     </div>
   );

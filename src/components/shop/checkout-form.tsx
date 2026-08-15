@@ -144,7 +144,7 @@ export function CheckoutForm() {
 
       <div className="flex flex-col gap-1.5">
         <Label>Оплата</Label>
-        <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">Накладений платіж — оплата при отриманні</p>
+        <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">Накладений платіж — оплата при отриманні, або передоплата</p>
       </div>
 
       <div className="flex flex-col gap-1.5">

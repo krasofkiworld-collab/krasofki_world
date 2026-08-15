@@ -247,7 +247,7 @@ export function ProductPurchasePanel({
       <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
         <p className="flex items-center gap-1.5">
           <Truck className="size-3.5 shrink-0" />
-          Доставка Новою поштою, оплата при отриманні
+          Доставка Новою поштою, оплата при отриманні або передоплата
         </p>
         <p className="flex items-center gap-1.5">
           <RotateCcw className="size-3.5 shrink-0" />
