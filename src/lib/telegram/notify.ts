@@ -47,6 +47,19 @@ export async function notifyStaff(orderId: string, message: string) {
 
 type OrderItemLine = { product_name: string; variant_name: string | null; quantity: number; line_total: number };
 
+// Everything the customer typed in at checkout — shown back to them so they
+// can catch a typo, and shown to staff since it's what they actually need
+// to pack and ship the order.
+type OrderContactDetails = {
+  city: string;
+  branch?: string | null;
+  phone: string;
+  note?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  contactTelegram?: string | null;
+};
+
 // Bulleted "name (variant) × qty — price" per line, e.g.:
 //   • Nike P-6000 Anthracite Chrome (42 / Основний) × 1 — 2 899 грн
 function formatItemLines(items: OrderItemLine[]) {
@@ -55,11 +68,22 @@ function formatItemLines(items: OrderItemLine[]) {
     .join("\n");
 }
 
+function formatContactDetails(d: OrderContactDetails, { includeName }: { includeName: boolean }) {
+  const lines: string[] = [];
+  const fullName = [d.firstName, d.lastName].filter(Boolean).join(" ");
+  if (includeName && fullName) lines.push(`👤 ${fullName}`);
+  lines.push(`📍 ${d.city}${d.branch ? `, відділення ${d.branch}` : ""}`);
+  lines.push(`📞 ${d.phone}`);
+  if (includeName && d.contactTelegram) lines.push(`💬 Telegram: ${d.contactTelegram}`);
+  if (d.note) lines.push(`📝 ${d.note}`);
+  return lines.join("\n");
+}
+
 export const orderMessages = {
-  created: (orderNumber: string, total: number, items: OrderItemLine[]) =>
-    `✅ Замовлення ${orderNumber} прийнято!\n\n${formatItemLines(items)}\n\nСума: ${formatMoney(total)}.\n\nНезабаром з вами зв'яжеться менеджер для підтвердження 🙌`,
-  createdForStaff: (orderNumber: string, total: number, items: OrderItemLine[], username?: string | null) =>
-    `🆕 Нове замовлення ${orderNumber}${username ? ` від @${username}` : ""}\n\n${formatItemLines(items)}\n\nСума: ${formatMoney(total)}`,
+  created: (orderNumber: string, total: number, items: OrderItemLine[], contact: OrderContactDetails) =>
+    `✅ Замовлення ${orderNumber} прийнято!\n\n${formatItemLines(items)}\n\nСума: ${formatMoney(total)}.\n\n${formatContactDetails(contact, { includeName: false })}\n\nНезабаром з вами зв'яжеться менеджер для підтвердження 🙌`,
+  createdForStaff: (orderNumber: string, total: number, items: OrderItemLine[], contact: OrderContactDetails, username?: string | null) =>
+    `🆕 Нове замовлення ${orderNumber}${username ? ` від @${username}` : ""}\n\n${formatItemLines(items)}\n\nСума: ${formatMoney(total)}\n\n${formatContactDetails(contact, { includeName: true })}`,
   confirmed: (orderNumber: string) =>
     `📦 Замовлення ${orderNumber} підтверджено!\nПакуємо та готуємо до відправки — тримаємо в курсі 👌`,
   shipped: (orderNumber: string, ttn?: string | null) =>

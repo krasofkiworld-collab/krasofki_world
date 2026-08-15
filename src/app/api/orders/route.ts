@@ -176,10 +176,24 @@ export async function POST(req: NextRequest) {
     -1
   );
 
+  const contactDetails = {
+    city: input.deliveryAddress.city,
+    branch: input.deliveryAddress.branch,
+    phone: input.contactPhone,
+    note: input.note,
+    firstName: identity.source === "telegram" ? identity.firstName : input.firstName,
+    lastName: identity.source === "telegram" ? identity.lastName : input.lastName,
+    contactTelegram: identity.source === "telegram" ? identity.username : input.contactTelegram,
+  };
+
   // Web guests have no Telegram chat to message — only staff gets pinged for those.
   await Promise.allSettled([
     identity.source === "telegram"
-      ? notifyCustomer(order.id, identity.telegramUserId, orderMessages.created(order.order_number, subtotal, orderItems))
+      ? notifyCustomer(
+          order.id,
+          identity.telegramUserId,
+          orderMessages.created(order.order_number, subtotal, orderItems, contactDetails)
+        )
       : Promise.resolve(),
     notifyStaff(
       order.id,
@@ -187,6 +201,7 @@ export async function POST(req: NextRequest) {
         order.order_number,
         subtotal,
         orderItems,
+        contactDetails,
         identity.source === "telegram" ? identity.username : undefined
       )
     ),
