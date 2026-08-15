@@ -22,7 +22,7 @@ export default function TermsPage() {
       <div>
         <p className="font-medium">Оплата</p>
         <p className="text-muted-foreground">
-          Оплата — накладеним платежем при отриманні у відділенні Нової пошти, або передоплатою.
+          Оплата — накладеним платежем при отриманні у відділенні Нової пошти + передоплата.
         </p>
       </div>
 
