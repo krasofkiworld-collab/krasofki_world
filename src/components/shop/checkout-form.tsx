@@ -108,29 +108,38 @@ export function CheckoutForm() {
         Повернення та обмін протягом 14 днів після отримання.
       </p>
 
-      {!inTelegram && (
-        <div className="flex flex-col gap-3 rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">Ваші контактні дані для замовлення</p>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="firstName">Ім&apos;я</Label>
-            <Input id="firstName" {...form.register("firstName")} placeholder="Андрій" />
-            {form.formState.errors.firstName && (
-              <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="lastName">Прізвище</Label>
-            <Input id="lastName" {...form.register("lastName")} placeholder="Шевченко" />
-            {form.formState.errors.lastName && (
-              <p className="text-xs text-destructive">{form.formState.errors.lastName.message}</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="contactTelegram">Telegram (за бажанням)</Label>
-            <Input id="contactTelegram" {...form.register("contactTelegram")} placeholder="@username" />
-          </div>
+      <div className="flex flex-col gap-3 rounded-lg border p-3">
+        <p className="text-xs text-muted-foreground">Ваші контактні дані для замовлення</p>
+        {!inTelegram && (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="firstName">Ім&apos;я</Label>
+              <Input id="firstName" {...form.register("firstName")} placeholder="Андрій" />
+              {form.formState.errors.firstName && (
+                <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>
+              )}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="lastName">Прізвище</Label>
+              <Input id="lastName" {...form.register("lastName")} placeholder="Шевченко" />
+              {form.formState.errors.lastName && (
+                <p className="text-xs text-destructive">{form.formState.errors.lastName.message}</p>
+              )}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="contactTelegram">Telegram (за бажанням)</Label>
+              <Input id="contactTelegram" {...form.register("contactTelegram")} placeholder="@username" />
+            </div>
+          </>
+        )}
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="contactPhone">Телефон</Label>
+          <Input id="contactPhone" {...form.register("contactPhone")} placeholder="+380XXXXXXXXX" />
+          {form.formState.errors.contactPhone && (
+            <p className="text-xs text-destructive">{form.formState.errors.contactPhone.message}</p>
+          )}
         </div>
-      )}
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <Label>Спосіб доставки</Label>
@@ -160,14 +169,6 @@ export function CheckoutForm() {
         <Input id="branch" {...form.register("branch")} placeholder="Відділення №5" />
         {form.formState.errors.branch && (
           <p className="text-xs text-destructive">{form.formState.errors.branch.message}</p>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contactPhone">Телефон</Label>
-        <Input id="contactPhone" {...form.register("contactPhone")} placeholder="+380XXXXXXXXX" />
-        {form.formState.errors.contactPhone && (
-          <p className="text-xs text-destructive">{form.formState.errors.contactPhone.message}</p>
         )}
       </div>
 
