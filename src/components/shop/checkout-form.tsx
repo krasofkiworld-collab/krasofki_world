@@ -22,7 +22,9 @@ import { toast } from "sonner";
 const checkoutSchema = z.object({
   city: z.string().min(1, "Вкажіть місто"),
   branch: z.string().min(1, "Вкажіть номер відділення"),
-  contactPhone: z.string().regex(/^\+?380\d{9}$/, "Формат: +380XXXXXXXXX"),
+  // Just the 9 digits after the fixed +380 prefix shown in the UI — the
+  // full E.164 number is assembled in onSubmit before it hits the API.
+  contactPhone: z.string().regex(/^\d{9}$/, "Вкажіть 9 цифр номера"),
   note: z.string().max(500).optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
@@ -65,7 +67,7 @@ export function CheckoutForm() {
           items: items.map((i) => ({ productId: i.productId, variantId: i.variantId, qty: i.qty })),
           deliveryMethod: "nova_poshta_branch",
           deliveryAddress: { city: values.city, branch: values.branch },
-          contactPhone: values.contactPhone,
+          contactPhone: `+380${values.contactPhone}`,
           note: values.note,
           ...(inTelegram
             ? {}
@@ -134,7 +136,21 @@ export function CheckoutForm() {
         )}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="contactPhone">Телефон</Label>
-          <Input id="contactPhone" {...form.register("contactPhone")} placeholder="+380XXXXXXXXX" />
+          <div className="flex items-center gap-2 rounded-md border border-input px-3 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
+            <span className="text-sm text-muted-foreground">+380</span>
+            <input
+              id="contactPhone"
+              type="tel"
+              inputMode="numeric"
+              placeholder="XXXXXXXXX"
+              className="h-9 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              {...form.register("contactPhone", {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 9);
+                },
+              })}
+            />
+          </div>
           {form.formState.errors.contactPhone && (
             <p className="text-xs text-destructive">{form.formState.errors.contactPhone.message}</p>
           )}
