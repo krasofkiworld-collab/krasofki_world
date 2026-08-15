@@ -144,11 +144,12 @@ export function CheckoutForm() {
               inputMode="numeric"
               placeholder="XXXXXXXXX"
               className="h-9 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              {...form.register("contactPhone", {
-                onChange: (e) => {
-                  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 9);
-                },
-              })}
+              {...form.register("contactPhone")}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                e.target.value = digits;
+                form.setValue("contactPhone", digits, { shouldValidate: true });
+              }}
             />
           </div>
           {form.formState.errors.contactPhone && (
