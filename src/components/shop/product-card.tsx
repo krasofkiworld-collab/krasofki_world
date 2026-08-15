@@ -101,18 +101,29 @@ export function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-3 pb-0">
-        {product.brands && (
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{product.brands.name}</p>
-        )}
-        <Link href={`/product/${product.slug}`} className="line-clamp-2 text-sm font-bold uppercase leading-tight">
+        {/* Fixed-height reservations below (brand/name/sku) so every card is
+            the same height regardless of which optional fields a given
+            product has — not just within one grid row, but everywhere
+            (horizontal strips, mismatched siblings, etc). */}
+        <p className="h-[14px] text-[10px] uppercase tracking-wide text-muted-foreground">
+          {product.brands?.name ?? " "}
+        </p>
+        <Link
+          href={`/product/${product.slug}`}
+          className="line-clamp-2 min-h-[35px] text-sm font-bold uppercase leading-tight"
+        >
           {product.name}
         </Link>
-        {product.sku && (
-          <button onClick={copySku} className="flex w-fit items-center gap-1 text-xs text-muted-foreground">
-            Код товару: {product.sku}
-            <Copy className="size-3" />
-          </button>
-        )}
+        <button
+          onClick={copySku}
+          className={cn(
+            "flex h-[18px] w-fit items-center gap-1 text-xs text-muted-foreground",
+            !product.sku && "invisible"
+          )}
+        >
+          Код товару: {product.sku ?? " "}
+          <Copy className="size-3" />
+        </button>
         <div className="mt-auto flex items-baseline gap-2 pb-3">
           {product.compare_at_price && product.compare_at_price > product.price && (
             <span className="text-sm text-orange-500 line-through">{formatMoney(product.compare_at_price)}</span>
