@@ -17,7 +17,9 @@ export async function GET(req: NextRequest) {
 
   const { data: orders } = await supabaseServer
     .from("orders")
-    .select("id, order_number, status, payment_status, total_amount, created_at")
+    .select(
+      "id, order_number, status, payment_status, total_amount, created_at, order_items(id, products(images))"
+    )
     .eq("customer_id", customer.id)
     .order("created_at", { ascending: false });
 
