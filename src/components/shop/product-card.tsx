@@ -62,7 +62,7 @@ export function ProductCard({ product }: { product: Product }) {
               alt={product.name}
               fill
               sizes="(max-width: 640px) 50vw, 300px"
-              className="object-contain p-6"
+              className="object-cover"
               onError={() => setImgError(true)}
             />
           ) : (
