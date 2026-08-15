@@ -25,13 +25,13 @@ const heading = Unbounded({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: "Krosofki World — взуття з доставкою по Україні", template: "%s — Krosofki World" },
+  title: { default: "Krasofki World — взуття з доставкою по Україні", template: "%s — Krasofki World" },
   description: "Кросівки, шльопанці та аксесуари з доставкою Новою поштою по всій Україні. Замовляйте через Telegram або на сайті.",
   openGraph: {
     type: "website",
     locale: "uk_UA",
-    siteName: "Krosofki World",
-    title: "Krosofki World — взуття з доставкою по Україні",
+    siteName: "Krasofki World",
+    title: "Krasofki World — взуття з доставкою по Україні",
     description: "Кросівки, шльопанці та аксесуари з доставкою Новою поштою по всій Україні.",
   },
   twitter: { card: "summary_large_image" },

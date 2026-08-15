@@ -24,6 +24,6 @@ export const useRecentlyViewed = create<RecentlyViewedState>()(
         })),
     }),
     // Same skipHydration reasoning as favorites/cart — see store-hydrator.tsx.
-    { name: "krosofki-recently-viewed", skipHydration: true }
+    { name: "krasofki-recently-viewed", skipHydration: true }
   )
 );

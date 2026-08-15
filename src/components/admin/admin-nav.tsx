@@ -69,7 +69,7 @@ export function AdminNav({ role }: { role: "owner" | "manager" }) {
     <aside className="flex w-64 shrink-0 flex-col gap-6 border-r border-sidebar-border bg-sidebar px-4 py-6 text-sidebar-foreground">
       <div className="flex items-center justify-between px-1">
         <Link href="/admin" className="text-base font-semibold">
-          Krosofki Admin
+          Krasofki Admin
         </Link>
         <UserButton />
       </div>

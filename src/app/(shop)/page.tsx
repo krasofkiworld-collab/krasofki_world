@@ -41,7 +41,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
 
   return (
     <div className="flex flex-col gap-4">
-      <HeroBanner storeName="Krosofki World" />
+      <HeroBanner storeName="Krasofki World" />
       {!hasActiveFilters && <RecentlyViewedStrip />}
       <SearchAndSort />
       <CategoryFilter categories={categories} />

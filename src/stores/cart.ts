@@ -53,7 +53,7 @@ export const useCart = create<CartState>()(
     }),
     // skipHydration: see stores/favorites.ts for why — same SSR/localStorage
     // hydration-mismatch fix, applied here for the cart badge/list.
-    { name: "krosofki-cart", skipHydration: true }
+    { name: "krasofki-cart", skipHydration: true }
   )
 );
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Про нас",
-  description: "Krosofki World — інтернет-магазин взуття та аксесуарів з доставкою по Україні.",
+  description: "Krasofki World — інтернет-магазин взуття та аксесуарів з доставкою по Україні.",
   alternates: { canonical: "/about" },
 };
 
@@ -11,7 +11,7 @@ export default function AboutPage() {
     <div className="flex flex-col gap-4 text-sm">
       <h1 className="text-xl font-semibold">Про нас</h1>
       <p className="text-muted-foreground">
-        Krosofki World — це магазин кросівок, шльопанців та аксесуарів. Ми зібрали каталог у зручному
+        Krasofki World — це магазин кросівок, шльопанців та аксесуарів. Ми зібрали каталог у зручному
         форматі: обирайте колір і розмір, кладіть у кошик і оформлюйте замовлення прямо в застосунку —
         через Telegram або на сайті.
       </p>

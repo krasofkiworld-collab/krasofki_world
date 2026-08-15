@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Політика конфіденційності",
-  description: "Які дані збирає Krosofki World і як вони використовуються.",
+  description: "Які дані збирає Krasofki World і як вони використовуються.",
   alternates: { canonical: "/privacy" },
 };
 

@@ -24,6 +24,6 @@ export const useFavorites = create<FavoritesState>()(
     // reads persisted state (e.g. the favorites heart icon) before React
     // finishes reconciling. StoreHydrator triggers the actual localStorage
     // read right after mount, once hydration is safe.
-    { name: "krosofki-favorites", skipHydration: true }
+    { name: "krasofki-favorites", skipHydration: true }
   )
 );

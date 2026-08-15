@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Часті питання",
-  description: "Відповіді на часті питання про замовлення, оплату, доставку та повернення в Krosofki World.",
+  description: "Відповіді на часті питання про замовлення, оплату, доставку та повернення в Krasofki World.",
   alternates: { canonical: "/faq" },
 };
 

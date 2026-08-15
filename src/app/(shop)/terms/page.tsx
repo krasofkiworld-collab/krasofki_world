@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Умови використання",
-  description: "Умови оформлення замовлень, оплати, доставки та повернення в Krosofki World.",
+  description: "Умови оформлення замовлень, оплати, доставки та повернення в Krasofki World.",
   alternates: { canonical: "/terms" },
 };
 

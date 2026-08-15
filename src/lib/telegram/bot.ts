@@ -14,7 +14,7 @@ bot.start(async (ctx) => {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   await ctx.reply(
-    "Вітаємо у Krosofki World! 👟\nТисни кнопку нижче, щоб відкрити магазин.",
+    "Вітаємо у Krasofki World! 👟\nТисни кнопку нижче, щоб відкрити магазин.",
     appUrl
       ? {
           reply_markup: {
