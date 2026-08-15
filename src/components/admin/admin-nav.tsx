@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Package, FolderTree, ShoppingBag, Settings, BadgeCheck, Hash, Users } from "lucide-react";
+import { LayoutDashboard, Package, FolderTree, ShoppingBag, Settings, BadgeCheck, Hash, Users, Contact } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PendingOrdersBadge } from "./pending-orders-badge";
 
 const MAIN_LINKS = [
   { href: "/admin", label: "Дашборд", icon: LayoutDashboard },
   { href: "/admin/orders", label: "Замовлення", icon: ShoppingBag, badge: PendingOrdersBadge },
+  { href: "/admin/customers", label: "Клієнти", icon: Contact },
 ];
 
 const CATALOG_LINKS = [

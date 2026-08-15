@@ -5,17 +5,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Truck, ShieldCheck } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Truck, ShieldCheck, Ban } from "lucide-react";
 import { useCart, cartTotal } from "@/stores/cart";
 import { formatMoney } from "@/lib/format";
 import { getInitData, withDevUserId, isInTelegram } from "./telegram-init";
 import { getWebClientId } from "./web-client-id";
 import { toast } from "sonner";
+
+const MANAGER_URL = "https://t.me/Manager_obu";
 
 // Only Nova Poshta branch delivery is offered right now — courier and
 // pickup are still valid values on the backend/DB enum, just not exposed here.
@@ -39,8 +43,25 @@ export function CheckoutForm() {
   const clear = useCart((s) => s.clear);
   const total = cartTotal(items);
   const [submitting, setSubmitting] = useState(false);
+  // Belt-and-suspenders: the /api/orders 403 also carries blocked:true in
+  // case the status check above was stale (e.g. blocked mid-session).
+  const [blockedFromSubmit, setBlockedFromSubmit] = useState(false);
   // Evaluated once on mount (client-only) — this never changes mid-session.
   const [inTelegram] = useState(isInTelegram);
+
+  const { data: status, isLoading: statusLoading } = useQuery({
+    queryKey: ["customer-status"],
+    queryFn: async () => {
+      const res = await fetch(withDevUserId("/api/customer/status"), {
+        headers: {
+          "X-Telegram-Init-Data": getInitData(),
+          ...(inTelegram ? {} : { "X-Web-Client-Id": getWebClientId() }),
+        },
+      });
+      if (!res.ok) return { blocked: false };
+      return (await res.json()) as { blocked: boolean };
+    },
+  });
 
   const form = useForm<CheckoutValues>({
     resolver: zodResolver(
@@ -77,7 +98,8 @@ export function CheckoutForm() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        toast.error(body.error ?? "Не вдалося оформити замовлення");
+        if (body.blocked) setBlockedFromSubmit(true);
+        else toast.error(body.error ?? "Не вдалося оформити замовлення");
         return;
       }
 
@@ -87,6 +109,25 @@ export function CheckoutForm() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (statusLoading) {
+    return <Skeleton className="h-64 w-full rounded-lg" />;
+  }
+
+  if (status?.blocked || blockedFromSubmit) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
+        <Ban className="size-8 text-destructive" />
+        <p className="font-medium">Оформлення замовлень для цього акаунта недоступне</p>
+        <p className="text-sm text-muted-foreground">
+          Якщо вважаєте, що це помилка — зверніться до менеджера, він допоможе розібратись.
+        </p>
+        <Button render={<a href={MANAGER_URL} target="_blank" rel="noopener noreferrer" />}>
+          Написати менеджеру
+        </Button>
+      </div>
+    );
   }
 
   return (

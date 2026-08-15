@@ -139,10 +139,13 @@ export type Database = {
       }
       customers: {
         Row: {
+          blocked_at: string | null
+          blocked_reason: string | null
           contact_telegram: string | null
           created_at: string
           first_name: string | null
           id: string
+          is_blocked: boolean
           last_name: string | null
           phone: string | null
           source: string
@@ -152,10 +155,13 @@ export type Database = {
           web_client_id: string | null
         }
         Insert: {
+          blocked_at?: string | null
+          blocked_reason?: string | null
           contact_telegram?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
+          is_blocked?: boolean
           last_name?: string | null
           phone?: string | null
           source?: string
@@ -165,10 +171,13 @@ export type Database = {
           web_client_id?: string | null
         }
         Update: {
+          blocked_at?: string | null
+          blocked_reason?: string | null
           contact_telegram?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
+          is_blocked?: boolean
           last_name?: string | null
           phone?: string | null
           source?: string

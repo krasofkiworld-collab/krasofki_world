@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
             },
             { onConflict: "telegram_user_id" }
           )
-          .select("id")
+          .select("id, is_blocked")
           .single()
       : await supabaseServer
           .from("customers")
@@ -120,11 +120,21 @@ export async function POST(req: NextRequest) {
             },
             { onConflict: "web_client_id" }
           )
-          .select("id")
+          .select("id, is_blocked")
           .single();
 
   if (customerError || !customer) {
     return NextResponse.json({ error: "failed to upsert customer" }, { status: 500 });
+  }
+
+  // Defense in depth — the checkout UI already hides the form for blocked
+  // customers, but this is the one place that actually has to hold the
+  // line since it's reachable directly regardless of what the UI shows.
+  if (customer.is_blocked) {
+    return NextResponse.json(
+      { error: "Оформлення замовлень для цього акаунта недоступне. Зверніться до менеджера.", blocked: true },
+      { status: 403 }
+    );
   }
 
   const { data: order, error: orderError } = await supabaseServer
