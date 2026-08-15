@@ -18,6 +18,14 @@ declare global {
         initData: string;
         initDataUnsafe: { user?: { id: number; username?: string; first_name?: string } };
         HapticFeedback?: { impactOccurred: (style: "light" | "medium" | "heavy") => void };
+        // contentSafeAreaInset is the one that matters in fullscreen mode —
+        // it's the space Telegram's own floating controls (minimize/close)
+        // overlap on top of the page content, distinct from safeAreaInset
+        // (the device notch/home-indicator area). Only present on 8.0+.
+        contentSafeAreaInset?: { top: number; bottom: number; left: number; right: number };
+        safeAreaInset?: { top: number; bottom: number; left: number; right: number };
+        onEvent?: (event: string, cb: () => void) => void;
+        offEvent?: (event: string, cb: () => void) => void;
         BackButton?: {
           show: () => void;
           hide: () => void;
@@ -46,6 +54,19 @@ function initTelegramWebApp() {
   if (tg.isVersionAtLeast("7.7")) tg.disableVerticalSwipes?.();
   document.documentElement.dataset.theme = tg.colorScheme;
   if (tg.themeParams.bg_color) tg.setHeaderColor(tg.themeParams.bg_color);
+
+  // In fullscreen mode Telegram overlays its own floating minimize/close
+  // controls on top of the page — contentSafeAreaInset.top is how much
+  // space they take up, so our own sticky header can pad below them
+  // instead of being covered. Insets can change after the fact (e.g. the
+  // floating controls appearing/disappearing), so this stays subscribed
+  // rather than reading the value once.
+  function applySafeArea() {
+    const inset = tg?.contentSafeAreaInset;
+    document.documentElement.style.setProperty("--tg-content-safe-area-top", `${inset?.top ?? 0}px`);
+  }
+  applySafeArea();
+  tg.onEvent?.("contentSafeAreaChanged", applySafeArea);
 }
 
 export function TelegramInit() {
